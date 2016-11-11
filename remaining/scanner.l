@@ -29,6 +29,8 @@ DIGIT [0-9]
 
 REAL (({DIGIT}+\.?{DIGIT}*|\.{DIGIT}+)[eE][-+]?{DIGIT}+)|({DIGIT}*\.{DIGIT}+)|({DIGIT}+\.)
 ID [a-zA-Z][a-zA-Z0-9]*
+VALID_STR '([^'\n]|'')*'
+NEWLINE_ERROR_STRING '[^'\n]*\n
 
 /* Position information is entered into the yylloc variable, so we will be
    able to generate good error messages later in later phases. */
@@ -278,6 +280,7 @@ ID [a-zA-Z][a-zA-Z0-9]*
                             yylloc.first_line = yylineno;
                             yylloc.first_column = column;
                             column += yyleng;
+                            yylval.ival = stoi(yytext);
                             return T_INTNUM;
                          }
 
@@ -285,6 +288,7 @@ ID [a-zA-Z][a-zA-Z0-9]*
                             yylloc.first_line = yylineno;
                             yylloc.first_column = column;
                             column += yyleng;
+                            yylval.rval = stof(yytext);
                             return T_REALNUM;
                          }  
 
@@ -299,11 +303,9 @@ ID [a-zA-Z][a-zA-Z0-9]*
                             yylloc.first_column = column;
                             column += yyleng;
                             yylval.pool_p = sym_tab->pool_install(sym_tab->capitalize(yytext));
-                            
-                            //sym_tab->pool_lookup(yylval.str);
                             return T_IDENT;
                          }
-'.*'                     {
+{VALID_STR}            {
                             yylloc.first_line = yylineno;
                             yylloc.first_column = column;
                             column += yyleng;
@@ -311,8 +313,18 @@ ID [a-zA-Z][a-zA-Z0-9]*
                             return T_STRINGCONST;
                          }
 
+{NEWLINE_ERROR_STRING}              {
+                            yyerror("Newline in string");
+                         }
+
+"\n"                     {
+                            column = 0;
+                         }
+
 
 \/\/.*$                  column = 0; /* Skip single-line comment */
+
+
 "/\*"                    {
                             column += yyleng;
                             BEGIN(c_comment);
@@ -338,7 +350,9 @@ ID [a-zA-Z][a-zA-Z0-9]*
 
 
 
-[[:space:]]
+[[:space:]]              {
+                          column++;
+                         }
 
 <<EOF>>                  yyterminate();
 .                        yyerror("Illegal character");
