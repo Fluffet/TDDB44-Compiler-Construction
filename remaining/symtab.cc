@@ -532,6 +532,9 @@ sym_index symbol_table::current_environment()
 void symbol_table::open_scope()
 {
     /* Your code here */
+    cout << "opening scope\n";
+    current_level++;
+    block_table[current_level] = sym_pos;
 }
 
 
@@ -539,7 +542,27 @@ void symbol_table::open_scope()
 sym_index symbol_table::close_scope()
 {
     /* Your code here */
-    return NULL_SYM;
+    
+    cout << "closing scope\n";
+    while(sym_pos >= block_table[current_level]+1){
+        /*
+        if(hash(sym_tab->get_symbol_id(sym_pos)) == sym_pos){
+            hash_table->
+        }
+        */
+
+        symbol* s = sym_tab->get_symbol(sym_pos);
+        s->back_link = s->hash_link;
+        s->tag = SYM_UNDEF;
+
+        sym_pos--;
+    }
+
+    current_level--;
+
+    cout << "closed scope\n";
+    
+    return sym_pos;
 }
 
 
@@ -551,7 +574,29 @@ sym_index symbol_table::close_scope()
 sym_index symbol_table::lookup_symbol(const pool_index pool_p)
 {
     /* Your code here */
-    return NULL_SYM;
+    cout << "lookup_symbol\n";
+
+    hash_index h = hash(pool_p);
+    sym_index temp = hash_table[h];
+
+    while( temp != NULL_SYM ){
+        symbol *s = get_symbol(temp);
+        
+        if(s->id == pool_p){
+            return temp;
+        }
+
+        else{
+            temp = s->hash_link;
+        }
+
+    }
+
+    //print(2);
+
+    //cout << "inte bra.\n";
+
+    return 0;
 }
 
 
@@ -641,7 +686,79 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
                                        const sym_type tag)
 {
     /* Your code here */
-    return 0; // Return index to the symbol we just created.
+    cout << "Install symbol\n";   
+
+    sym_index harald = this->lookup_symbol(pool_p);
+    
+    cout << " Looked up sym\n";
+    symbol* s;
+    if(harald == 0 || get_symbol(harald)->level < current_level){
+        
+        cout << "Creating new symbol: " << tag << "\n";
+
+        switch( tag ){
+            
+            case SYM_ARRAY:
+                s = new array_symbol(pool_p);
+                break;
+
+            case SYM_FUNC:
+                s = new function_symbol(pool_p);
+                break;
+            
+            case SYM_PROC:
+                s = new procedure_symbol(pool_p);
+                cout << "1111:  " << s->id << "\n";
+                break;
+            
+            case SYM_VAR:
+                s = new variable_symbol(pool_p);
+                break;
+            
+            case SYM_PARAM:
+                s = new parameter_symbol(pool_p);
+                break;
+            
+            case SYM_CONST:
+                s = new constant_symbol(pool_p);
+                break;
+            
+            case SYM_NAMETYPE:
+                s = new nametype_symbol(pool_p);
+                break;
+            
+            default:
+                //s = new function_symbol(pool_p);
+                cout << "SYM TAG DEFAULT ?? dafuq\n";
+                break;
+        }
+
+        
+        s->level = current_level;
+
+
+        hash_index hash = this->hash(pool_p);
+
+
+        s->hash_link = hash_table[hash];
+        s->back_link = hash;
+
+        cout << "ayy: " << s->hash_link << "\n" << s->back_link << "\n";
+
+        sym_pos++;
+
+        this->hash_table[hash] = sym_pos;
+        this->sym_table[sym_pos] = s;
+
+                
+        cout << "Ayhashdashadshdahdhdh " << sym_pos << "\n";
+        return sym_pos;
+    }
+    else{
+
+        return harald;
+    
+    }
 }
 
 /* Enter a constant into the symbol table. The value is an integer. The type
@@ -886,7 +1003,32 @@ sym_index symbol_table::enter_procedure(position_information *pos,
                                         const pool_index pool_p)
 {
     /* Your code here */
-    return NULL_SYM;
+    sym_index i = install_symbol(pool_p, SYM_PROC);
+    /*
+    cout << "Sym index: " << i << "\n";
+    cout << " AYYSDFJSDK " << sym_table[i]->id << "\n";
+    */
+    procedure_symbol *proc = sym_table[i]->get_procedure_symbol();
+
+    if (proc->tag != SYM_UNDEF) {
+        type_error(pos) << "Redeclaration: " << proc << endl;
+        return i; // returns the original symbol
+    }
+
+    proc->tag = SYM_PROC;
+    
+    proc->last_parameter = NULL;
+    proc->ar_size = 0;
+
+    proc->label_nr = get_next_label();
+
+    sym_table[i] = proc;
+
+    //cout << "\n\n\n\n";
+    //print(1);
+    //cout << "Exiting enter_procedure\n";
+
+    return i;
 }
 
 
