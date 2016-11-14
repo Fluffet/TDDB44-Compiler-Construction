@@ -532,8 +532,10 @@ sym_index symbol_table::current_environment()
 void symbol_table::open_scope()
 {
     /* Your code here */
-    cout << "opening scope\n";
+    //cout << "opening scope\n";
     current_level++;
+    if (current_level >= MAX_BLOCK)
+        fatal("Block table full!");
     block_table[current_level] = sym_pos;
 }
 
@@ -543,24 +545,24 @@ sym_index symbol_table::close_scope()
 {
     /* Your code here */
     
-    cout << "closing scope\n";
-    while(sym_pos >= block_table[current_level]+1){
-        /*
-        if(hash(sym_tab->get_symbol_id(sym_pos)) == sym_pos){
-            hash_table->
+    //cout << "closing scope. Sym_pos: " << sym_pos << endl;
+    sym_index temp = sym_pos;
+    while(temp >= block_table[current_level]+1){
+
+        symbol* s = sym_tab->get_symbol(temp);
+        if (hash_table[s->back_link] == temp)
+        {
+            hash_table[s->back_link] = s->hash_link;
         }
-        */
+        s->hash_link = NULL_SYM;
 
-        symbol* s = sym_tab->get_symbol(sym_pos);
-        s->back_link = s->hash_link;
-        s->tag = SYM_UNDEF;
-
-        sym_pos--;
+        temp--;
     }
 
+    block_table[current_level] = 0;
     current_level--;
 
-    cout << "closed scope\n";
+    //cout << "closed scope\n";
     
     return sym_pos;
 }
@@ -574,15 +576,17 @@ sym_index symbol_table::close_scope()
 sym_index symbol_table::lookup_symbol(const pool_index pool_p)
 {
     /* Your code here */
-    cout << "lookup_symbol\n";
+    char *sec = pool_lookup(pool_p);
+    //cout << "lookup_symbol: " << sec << endl;
 
     hash_index h = hash(pool_p);
     sym_index temp = hash_table[h];
 
     while( temp != NULL_SYM ){
+        //cout << "Temp: " << temp << endl;
         symbol *s = get_symbol(temp);
-        
-        if(s->id == pool_p){
+        if(strcmp(pool_lookup(s->id), pool_lookup(pool_p)) == 0)// s->id == pool_p)
+        {
             return temp;
         }
 
@@ -686,16 +690,44 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
                                        const sym_type tag)
 {
     /* Your code here */
-    cout << "Install symbol\n";   
+    //cout << "\nInstall symbol. Sym_pos before: " << sym_pos << endl;   
 
     sym_index harald = this->lookup_symbol(pool_p);
     
-    cout << " Looked up sym\n";
+    //cout << " Looked up sym. Sym_index: " << harald << endl;
+    //cout << "Current level: " << current_level << endl;
     symbol* s;
     if(harald == 0 || get_symbol(harald)->level < current_level){
         
-        cout << "Creating new symbol: " << tag << "\n";
-
+        /*cout << "Creating new symbol: ";
+        switch (tag) {
+        case SYM_UNDEF:
+            cout << "SYM_UNDEF ";
+            break;
+        case SYM_CONST:
+            cout << "SYM_CONST ";
+            break;
+        case SYM_VAR:
+            cout << "SYM_VAR ";
+            break;
+        case SYM_ARRAY:
+            cout << "SYM_ARRAY ";
+            break;
+        case SYM_PARAM:
+            cout << "SYM_PARAM ";
+            break;
+        case SYM_PROC:
+            cout << "SYM_PROC ";
+            break;
+        case SYM_FUNC:
+            cout << "SYM_FUNC ";
+            break;
+        case SYM_NAMETYPE:
+            cout << "SYM_NAMETYPE ";
+            break;
+        }
+        cout << endl;
+*/
         switch( tag ){
             
             case SYM_ARRAY:
@@ -708,7 +740,7 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
             
             case SYM_PROC:
                 s = new procedure_symbol(pool_p);
-                cout << "1111:  " << s->id << "\n";
+                
                 break;
             
             case SYM_VAR:
@@ -732,6 +764,7 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
                 cout << "SYM TAG DEFAULT ?? dafuq\n";
                 break;
         }
+        //cout << "s->id:  " << s->id << "\n";
 
         
         s->level = current_level;
@@ -743,15 +776,16 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
         s->hash_link = hash_table[hash];
         s->back_link = hash;
 
-        cout << "ayy: " << s->hash_link << "\n" << s->back_link << "\n";
+        //cout << "ayy: " << s->hash_link << "\n" << s->back_link << "\n";
 
         sym_pos++;
+        if (sym_pos >= MAX_SYM)
+            fatal("Symbol table full!");
 
         this->hash_table[hash] = sym_pos;
         this->sym_table[sym_pos] = s;
 
-                
-        cout << "Ayhashdashadshdahdhdh " << sym_pos << "\n";
+        
         return sym_pos;
     }
     else{
@@ -1016,6 +1050,7 @@ sym_index symbol_table::enter_procedure(position_information *pos,
     }
 
     proc->tag = SYM_PROC;
+    proc->type = void_type;
     
     proc->last_parameter = NULL;
     proc->ar_size = 0;
