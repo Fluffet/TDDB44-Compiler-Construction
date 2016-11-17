@@ -3,9 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+// Lab 1 and 2
 #include "scanner.hh"
+
 #include "symtab.hh"
+
+// Lab 3 stuff
+//#include "ast.hh"
+//#include "parser.hh"
 
 // This is where you put #include directives as needed for later labs.
 // include "ast.hh", parser.hh" in that order
@@ -25,6 +30,7 @@ extern YYLTYPE yylloc; // Used for position information, see below.
 /* If you want to include any flex declarations, this is where to do it. */
 
 %x c_comment
+%x d_comment
 DIGIT [0-9]
 /* {DIGIT}+"."{DIGIT}*
  ID [a-z][a-z0-9]* */
@@ -32,7 +38,7 @@ DIGIT [0-9]
 REAL (({DIGIT}+\.?{DIGIT}*|\.{DIGIT}+)[eE][-+]?{DIGIT}+)|({DIGIT}*\.{DIGIT}+)|({DIGIT}+\.)
 ID [a-zA-Z][a-zA-Z0-9]*
 VALID_STR '([^'\n]|'')*'
-NEWLINE_ERROR_STRING '[^'\n]*\n
+NEWLINE_ERROR_STRING '([^'\n]|'')*\n
 
 /* Position information is entered into the yylloc variable, so we will be
    able to generate good error messages later in later phases. */
@@ -351,8 +357,32 @@ NEWLINE_ERROR_STRING '[^'\n]*\n
 }
 
 
+"{"                    {
+                            column += yyleng;
+                            BEGIN(d_comment);
+                         }
 
-[[:space:]]              {
+
+<d_comment>
+{
+    "}"                {
+                            column += 1;
+                            BEGIN(INITIAL);
+                         }
+    "{"                {
+                            column += 2;
+                            yyerror("Suspicious comment");
+                         }
+    [^\n]                column++; /* Skip stuff in comments */
+    \n                   column = 0;
+    <<EOF>>              {
+                            yyerror("Unterminated comment");
+                            yyterminate();
+                         }
+}
+
+
+[[:blank:]]              {
                           column++;
                          }
 

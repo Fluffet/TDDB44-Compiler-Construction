@@ -547,7 +547,7 @@ sym_index symbol_table::close_scope()
     
     //cout << "closing scope. Sym_pos: " << sym_pos << endl;
     sym_index temp = sym_pos;
-    while(temp >= block_table[current_level]+1){
+    while(temp > block_table[current_level]){
 
         symbol* s = sym_tab->get_symbol(temp);
         if (hash_table[s->back_link] == temp)
@@ -600,7 +600,7 @@ sym_index symbol_table::lookup_symbol(const pool_index pool_p)
 
     //cout << "inte bra.\n";
 
-    return 0;
+    return NULL_SYM;
 }
 
 
@@ -697,37 +697,11 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
     //cout << " Looked up sym. Sym_index: " << harald << endl;
     //cout << "Current level: " << current_level << endl;
     symbol* s;
-    if(harald == 0 || get_symbol(harald)->level < current_level){
-        
-        /*cout << "Creating new symbol: ";
-        switch (tag) {
-        case SYM_UNDEF:
-            cout << "SYM_UNDEF ";
-            break;
-        case SYM_CONST:
-            cout << "SYM_CONST ";
-            break;
-        case SYM_VAR:
-            cout << "SYM_VAR ";
-            break;
-        case SYM_ARRAY:
-            cout << "SYM_ARRAY ";
-            break;
-        case SYM_PARAM:
-            cout << "SYM_PARAM ";
-            break;
-        case SYM_PROC:
-            cout << "SYM_PROC ";
-            break;
-        case SYM_FUNC:
-            cout << "SYM_FUNC ";
-            break;
-        case SYM_NAMETYPE:
-            cout << "SYM_NAMETYPE ";
-            break;
-        }
-        cout << endl;
-*/
+    if(harald == NULL_SYM || get_symbol(harald)->level < current_level){
+        sym_pos++;
+        if (sym_pos >= MAX_SYM)
+            fatal("Symbol table full!");
+
         switch( tag ){
             
             case SYM_ARRAY:
@@ -778,10 +752,7 @@ sym_index symbol_table::install_symbol(const pool_index pool_p,
 
         //cout << "ayy: " << s->hash_link << "\n" << s->back_link << "\n";
 
-        sym_pos++;
-        if (sym_pos >= MAX_SYM)
-            fatal("Symbol table full!");
-
+        
         this->hash_table[hash] = sym_pos;
         this->sym_table[sym_pos] = s;
 
