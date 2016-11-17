@@ -180,6 +180,12 @@ prog_decl       : prog_head T_SEMICOLON const_part variable_part
 prog_head       : T_PROGRAM T_IDENT
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                                 @1.first_column);
+
+                    $$ = new ast_procedurehead(pos,$2);
+
                     sym_tab->open_scope();
                 }
                 ;
@@ -198,11 +204,23 @@ const_decls     : const_decl
 
 const_decl      : T_IDENT T_EQ integer T_SEMICOLON
                 {
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                                 @1.first_column);
+                    sym_index sym_p = sym_tab->enter_constant(pos, $1, integer_type, $3->value);
+                    
                     /* Your code here */
                 }
                 | T_IDENT T_EQ real T_SEMICOLON
                 {
                     /* Your code here */
+
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                                 @1.first_column);
+                    sym_index sym_p = sym_tab->enter_constant(pos, $1, real_type, $3->value);
+
+
                 }
                 | T_IDENT T_EQ T_STRINGCONST T_SEMICOLON
                 {
@@ -217,6 +235,11 @@ const_decl      : T_IDENT T_EQ integer T_SEMICOLON
                     // constant bar = foo;
                     // ...now, why would anyone want to do that?
                     /* Your code here */
+                    /*position_information *pos =
+                        new position_information(@1.first_line,
+                                                 @1.first_column);
+                    sym_index s_i = sym_tab->enter_constant(pos, $1, void_type, $3->sym_p);
+                    */
                 }
                 
                 ;
@@ -570,10 +593,14 @@ lvariable       : lvar_id
 rvariable       : rvar_id
                 {
                     /* Your code here */
+                    $$ = $1;
                 }
                 | array_id T_LEFTBRACKET expr T_RIGHTBRACKET
                 {
                     /* Your code here */
+                    $$ = new ast_indexed($1->pos,
+                                         $1,
+                                         $3);
                 }
                 
                 ;
@@ -656,18 +683,29 @@ expr            : simple_expr
 simple_expr     : term
                 {
                     /* Your code here */
+                    //$$ = $1;
                 }
                 | T_ADD term
                 {
                     /* Your code here */
+                    //$$ = $1;
                 }
                 | T_SUB term
                 {
                     /* Your code here */
+                    //$$ = $1;
+                    //$$->value = -1 * $$->value;
                 }
                 | simple_expr T_OR term
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+                    //$$ = new ast_or(pos,$1,$3);
+
+
+
                 }
                 | simple_expr T_ADD term
                 {
@@ -683,26 +721,47 @@ simple_expr     : term
 term            : factor
                 {
                     /* Your code here */
+                    $$ = $1;
                 }
                 | term T_AND factor
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+                    $$ = new ast_and(pos,$1,$3);
                 }
                 | term T_MUL factor
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+                    $$ = new ast_mul(pos,$1,$3);
                 }
                 | term T_RDIV factor
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+                    $$ = new ast_divide(pos,$1,$3);
                 }
                 | term T_IDIV factor
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+                    $$ = new ast_idiv(pos,$1,$3);
                 }
                 | term T_MOD factor
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+                    $$ = new ast_mod(pos,$1,$3);
                 }
                 ;
 
@@ -726,10 +785,16 @@ factor          : rvariable
                 | T_NOT factor
                 {
                     /* Your code here */
+                    position_information *pos =
+                        new position_information(@1.first_line,
+                                             @1.first_column);
+
+                    $$ = new ast_not(pos, $1);
                 }
                 | T_LEFTPAR expr T_RIGHTPAR
                 {
                     /* Your code here */
+                    $$ = $2;
                 }
                 
                 ;
