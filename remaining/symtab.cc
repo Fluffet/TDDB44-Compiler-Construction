@@ -576,7 +576,7 @@ sym_index symbol_table::close_scope()
 sym_index symbol_table::lookup_symbol(const pool_index pool_p)
 {
     /* Your code here */
-    char *sec = pool_lookup(pool_p);
+    //char *sec = pool_lookup(pool_p);
     //cout << "lookup_symbol: " << sec << endl;
 
     hash_index h = hash(pool_p);
@@ -914,11 +914,9 @@ sym_index symbol_table::enter_array(position_information *pos,
 {
     // Install an array_symbol in the symbol table.
     sym_index sym_p = install_symbol(pool_p, SYM_ARRAY);
-
     // This extra mess is required for safe downcasting, so we can access
     // the fields specific to this subclass of symbol.
     array_symbol *arr = sym_table[sym_p]->get_array_symbol();
-
     // Make sure it's not already been declared.
     if (arr->tag != SYM_UNDEF) {
         type_error(pos) << "Redeclaration: " << arr << endl;
@@ -930,7 +928,6 @@ sym_index symbol_table::enter_array(position_information *pos,
     arr->type = type;
     arr->tag = SYM_ARRAY;
     arr->array_cardinality = cardinality;
-
     // This is redundant, really, as the grammar stands currently... It can
     // only be an integer.
     arr->index_type = integer_type;
@@ -942,7 +939,6 @@ sym_index symbol_table::enter_array(position_information *pos,
     // be a function or a procedure, and we need to differ the two. Fortunately
     // we can use the tag field for this, since it's common to all symbols.
     symbol* tmp = sym_table[current_environment()];
-
     // We only do this if the array had a legal index. The reason is that the
     // value we use for illegal indexes happens to be -1, and using that value
     // here would mess up the offsets and ar_sizes to no end. The illegal
@@ -964,7 +960,6 @@ sym_index symbol_table::enter_array(position_information *pos,
         }
     }
     sym_table[sym_p] = arr;
-
     return sym_p;
 }
 

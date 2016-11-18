@@ -4,13 +4,13 @@
 #include <string.h>
 
 // Lab 1 and 2
-#include "scanner.hh"
+//#include "scanner.hh"
 
 #include "symtab.hh"
 
 // Lab 3 stuff
-//#include "ast.hh"
-//#include "parser.hh"
+#include "ast.hh"
+#include "parser.hh"
 
 // This is where you put #include directives as needed for later labs.
 // include "ast.hh", parser.hh" in that order
@@ -362,7 +362,6 @@ NEWLINE_ERROR_STRING '([^'\n]|'')*\n
                             BEGIN(d_comment);
                          }
 
-
 <d_comment>
 {
     "}"                {
@@ -370,7 +369,7 @@ NEWLINE_ERROR_STRING '([^'\n]|'')*\n
                             BEGIN(INITIAL);
                          }
     "{"                {
-                            column += 2;
+                            column += 1;
                             yyerror("Suspicious comment");
                          }
     [^\n]                column++; /* Skip stuff in comments */
