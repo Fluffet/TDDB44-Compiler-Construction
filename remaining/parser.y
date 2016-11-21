@@ -35,14 +35,22 @@ extern bool optimize;
 extern bool quads;
 extern bool assembler;
 
+
+
 #define YYDEBUG 1
+#define P_DEBUG 0
+
+void print_debug(string s){
+#if P_DEBUG == 1
+    cout << s << endl;
+#endif
+}
 
 /* Have this defined to give better error messages. Using it causes
    some bison warnings at compiler compile time, however. Use as you
    wish. Not mandatory. */
 #define YYERROR_VERBOSE
 %}
-
 
 
 /* The different semantic values that can be returned within the AST. This is
@@ -172,9 +180,9 @@ program         : prog_decl subprog_part comp_stmt T_DOT
 
 prog_decl       : prog_head T_SEMICOLON const_part variable_part
                 {
-                    printf("prog_decl START\n");
+                    print_debug("prog_decl START\n");
                     $$ = $1;
-                    printf("prog_decl DONE\n");
+                    print_debug("prog_decl DONE\n");
                 }
                 ;
 
@@ -182,7 +190,7 @@ prog_decl       : prog_head T_SEMICOLON const_part variable_part
 prog_head       : T_PROGRAM T_IDENT
                 {
                     /* Your code here */
-                    printf("prog_head\n");
+                    print_debug("prog_head\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -195,7 +203,10 @@ prog_head       : T_PROGRAM T_IDENT
 
 
 const_part      : T_CONST const_decls
-                | error const_decls
+                | error const_decls 
+                {
+                    yyerrok;
+                }
                 | /* empty */
                 ;
 
@@ -207,7 +218,7 @@ const_decls     : const_decl
 
 const_decl      : T_IDENT T_EQ integer T_SEMICOLON
                 {
-                    printf("Const decl 1\n");
+                    print_debug("Const decl 1\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -240,13 +251,13 @@ const_decl      : T_IDENT T_EQ integer T_SEMICOLON
                     // ...now, why would anyone want to do that?
                     /* Your code here */
                     //TODO: FIX
-                    /*position_information *pos =
+                    position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
-                    sym_index s_i = sym_tab->enter_constant(pos, $1, void_type, $3->sym_p);
-                    */
+
+                    sym_index s_i = sym_tab->enter_constant(pos, $1, $3->type, $3->sym_p);
+                    
                 }
-                
                 ;
 
 
@@ -263,18 +274,18 @@ var_decls       : var_decl
 var_decl        : T_IDENT T_COLON type_id T_SEMICOLON
                 {
                     /* Your code here */
-                    printf("var_decl 1 START\n");
+                    print_debug("var_decl 1 START\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column); 
                     sym_tab->enter_variable(pos, $1, $3->sym_p);
-                    printf("var_decl 1 DONE\n");
+                    print_debug("var_decl 1 DONE\n");
 
                 }
                 | T_IDENT T_COLON T_ARRAY T_LEFTBRACKET integer T_RIGHTBRACKET T_OF type_id T_SEMICOLON
                 {
                     /* Your code here */
-                     printf("var_decl 2 START\n");
+                     print_debug("var_decl 2 START\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -282,7 +293,7 @@ var_decl        : T_IDENT T_COLON type_id T_SEMICOLON
                                          $1,
                                          $8->sym_p,
                                          $5->value);
-                     printf("var_decl 2 DONE\n");
+                     print_debug("var_decl 2 DONE\n");
 
                 }
                 | T_IDENT T_COLON T_ARRAY T_LEFTBRACKET const_id T_RIGHTBRACKET T_OF type_id T_SEMICOLON
@@ -337,19 +348,28 @@ var_decl        : T_IDENT T_COLON type_id T_SEMICOLON
                 ;
 
 
-subprog_part    : subprog_decls
+subprog_part    : subprog_decls {
+                    print_debug("subprog_part 1");
+                }
                 | /* empty */
+                {print_debug("subprog_part 2");}
                 ;
 
 
 subprog_decls   : subprog_decl
+                {
+                    print_debug("subprog_decl 1");
+                }
                 | subprog_decls subprog_decl
+                {
+                    print_debug("subprog_decl 2");
+                }
                 ;
 
 
 subprog_decl    : proc_decl subprog_part comp_stmt T_SEMICOLON
                 {
-                    printf("subprog_decl 1 START\n");
+                    print_debug("subprog_decl 1 START\n");
                     symbol *env = sym_tab->get_symbol($1->sym_p);
 
                     if (typecheck) {
@@ -394,11 +414,11 @@ subprog_decl    : proc_decl subprog_part comp_stmt T_SEMICOLON
 
                     // Close the current scope.
                     sym_tab->close_scope();
-                    printf("subprog_decl 1 DONE\n");
+                    print_debug("subprog_decl 1 DONE\n");
                 }
                 | func_decl subprog_part comp_stmt T_SEMICOLON
                 {
-                    printf("subprog_decl 2 START\n");
+                    print_debug("subprog_decl 2 START\n");
                     symbol *env = sym_tab->get_symbol($1->sym_p);
 
                     if (typecheck) {
@@ -443,16 +463,16 @@ subprog_decl    : proc_decl subprog_part comp_stmt T_SEMICOLON
 
                     // Close the current scope.
                     sym_tab->close_scope();
-                    printf("subprog_decl 2 DONE\n");
+                    print_debug("subprog_decl 2 DONE\n");
                 }
                 ;
 
 
 proc_decl       : proc_head opt_param_list T_SEMICOLON const_part variable_part
                 {
-                    printf("proc_decl START\n");
+                    print_debug("proc_decl START\n");
                     $$ = $1;
-                    printf("proc_decl DONE\n");
+                    print_debug("proc_decl DONE\n");
                 }
                 ;
 
@@ -460,19 +480,17 @@ proc_decl       : proc_head opt_param_list T_SEMICOLON const_part variable_part
 func_decl       : func_head opt_param_list T_COLON type_id T_SEMICOLON const_part variable_part
                 {
                     /* Your code here */
-                    printf("func_decl START\n");
+                    print_debug("func_decl START\n");
                     sym_tab->get_symbol($1->sym_p)->type = $4->sym_p;
-                    sym_tab->print(1);
                     $$ = $1;
-                    printf("func_decl DONE\n");
-                    cout << endl << $$ << endl;
+                    print_debug("func_decl DONE\n");
                 }
                 ;
 
 
 proc_head       : T_PROCEDURE T_IDENT
                 {
-                    printf("proc_head START\n");
+                    print_debug("proc_head START\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -487,14 +505,14 @@ proc_head       : T_PROCEDURE T_IDENT
                     // above. It's needed for code generation.
                     $$ = new ast_procedurehead(pos,
                                                proc_loc);
-                    printf("proc_head DONE\n");
+                    print_debug("proc_head DONE\n");
                 }
                 ;
 
 
 func_head       : T_FUNCTION T_IDENT
                 {
-                    printf("func_head START\n");
+                    print_debug("func_head START\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -511,7 +529,7 @@ func_head       : T_FUNCTION T_IDENT
                     // and also later on for code generation.
                     $$ = new ast_functionhead(pos,
                                               func_loc);
-                    printf("func_head DONE\n");
+                    print_debug("func_head DONE\n");
                 }
                 ;
 
@@ -523,11 +541,13 @@ opt_param_list  : T_LEFTPAR param_list T_RIGHTPAR
                 }
                 | T_LEFTPAR error T_RIGHTPAR
                 {
+                    yyerrok;
                     $$ = NULL;
                 }
                 | /* empty */
                 {
                     /* Your code here */
+                    $$ = NULL;
                 }
                 ;
 
@@ -545,6 +565,7 @@ param_list      : param
 
 param           : T_IDENT T_COLON type_id
                 {
+                    print_debug("Parameter!");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -564,7 +585,7 @@ param           : T_IDENT T_COLON type_id
 comp_stmt       : T_BEGIN stmt_list T_END
                 {
                     /* Your code here */
-                    printf("begin read\n");
+                    print_debug("begin read\n");
                     $$ = $2;
                 }
                 ;
@@ -573,19 +594,45 @@ comp_stmt       : T_BEGIN stmt_list T_END
 stmt_list       : stmt
                 {
                     /* Your code here */
-                    $$ = new ast_stmt_list($1->pos, $1);
+
+                    if ($1 != NULL)
+                    {
+                        $$ = new ast_stmt_list($1->pos, $1);
+                    }
+                    else 
+                    {
+                        $$ = NULL;
+                    }
                 }
-                | stmt_list T_SEMICOLON stmt
+                 // stmt T_SEMICOLON stmt T_SEMICOLON stmt(empty)
+                | stmt_list T_SEMICOLON stmt 
                 {
                     /* Your code here */
-                    $$ = new ast_stmt_list($1->pos, $3, $1);
+                    //cout << endl;
+                    print_debug("stmt_list 2 Start");
+                    //cout << $1 << endl << endl;
+                    if ($1 != NULL && $3 != NULL)
+                    {
+                        $$ = new ast_stmt_list($1->pos, $3, $1);
+                    }
+                    else if( $3 != NULL )
+                    {
+                        $$ = new ast_stmt_list($3->pos, $3);
+                    }
+                    else
+                    {
+                        $$ = $1;
+                    }
+                    print_debug("stmt_list 2 END");
                 }
+
                 ;
 
 
 stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 {
                     /* Your code here */
+                    print_debug("stmt 1");
                     position_information *pos =
                         new position_information(@1.first_line,
                                              @1.first_column);
@@ -594,6 +641,7 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 | T_WHILE expr T_DO stmt_list T_END
                 {
                     /* Your code here */
+                    print_debug("stmt 2");
                     position_information *pos =
                         new position_information(@1.first_line,
                                              @1.first_column);
@@ -602,16 +650,19 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 | proc_id T_LEFTPAR opt_expr_list T_RIGHTPAR
                 {
                     /* Your code here */
+                    print_debug("stmt 3");
                     $$ = new ast_procedurecall($1->pos, $1, $3);
                 }
                 | lvariable T_ASSIGN expr
                 {
                     /* Your code here */
+                    print_debug("stmt 4");
                     $$ = new ast_assign($1->pos, $1, $3);
                 }
                 | T_RETURN expr
                 {
                     /* Your code here */
+                    print_debug("stmt 5");
                     position_information *pos =
                         new position_information(@1.first_line,
                                              @1.first_column);
@@ -620,6 +671,7 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 | T_RETURN
                 {
                     /* Your code here */
+                    print_debug("stmt 6");
                     position_information *pos =
                         new position_information(@1.first_line,
                                              @1.first_column);
@@ -629,6 +681,11 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 | /* empty */
                 {
                     /* Your code here */
+                    $$ = NULL;
+                }
+                | error
+                {
+                    yyerrok;
                     $$ = NULL;
                 }
                 ;
@@ -645,6 +702,7 @@ lvariable       : lvar_id
                 }
                 | array_id T_LEFTBRACKET error T_RIGHTBRACKET
                 {
+                    yyerrok;
                     $$ = NULL;
                 }
                 ;
@@ -662,7 +720,20 @@ rvariable       : rvar_id
                                          $1,
                                          $3);
                 }
-                
+                | array_id T_LEFTBRACKET error T_RIGHTBRACKET
+                {
+                    //We added this
+                    cout << "rvariable 1 ERROR" << endl;
+                    yyerrok;
+                    $$ = NULL;
+                }
+                | error
+                {
+                    cout << "rvariable 2 ERROR" << endl;
+                    yyerrok;
+                    $$ = NULL;
+                }
+
                 ;
 
 
@@ -720,19 +791,13 @@ opt_expr_list   : expr_list
 expr_list       : expr
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_expr_list(pos, $1);
+                    $$ = new ast_expr_list($1->pos, $1);
 
                 }
                 | expr_list T_COMMA expr
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_expr_list(pos, $3, $1);
+                    $$ = new ast_expr_list($1->pos, $3, $1);
                 }
                 ;
 
@@ -745,34 +810,22 @@ expr            : simple_expr
                 | expr T_EQ simple_expr
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_equal(pos, $1, $3);
+                    $$ = new ast_equal($1->pos, $1, $3);
                 }
                 | expr T_NOTEQ simple_expr
                 {
                     /* Your code here */
-                   position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_notequal(pos, $1, $3);
+                    $$ = new ast_notequal($1->pos, $1, $3);
                 }
                 | expr T_LESSTHAN simple_expr
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_lessthan(pos, $1, $3);
+                    $$ = new ast_lessthan($1->pos, $1, $3);
                 }
                 | expr T_GREATERTHAN simple_expr
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_greaterthan(pos, $1, $3);
+                    $$ = new ast_greaterthan($1->pos, $1, $3);
                 }
                 ;
 
@@ -798,10 +851,7 @@ simple_expr     : term
                 | simple_expr T_OR term
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_or(pos,$1,$3);
+                    $$ = new ast_or($1->pos,$1,$3);
 
 
 
@@ -809,19 +859,12 @@ simple_expr     : term
                 | simple_expr T_ADD term
                 {
                     /* Your code here */
-
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_add(pos,$1,$3);
+                    $$ = new ast_add($1->pos,$1,$3);
                 }
                 | simple_expr T_SUB term
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_sub(pos,$1,$3);
+                    $$ = new ast_sub($1->pos,$1,$3);
                 }
                 ;
 
@@ -834,42 +877,27 @@ term            : factor
                 | term T_AND factor
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_and(pos,$1,$3);
+                    $$ = new ast_and($1->pos,$1,$3);
                 }
                 | term T_MUL factor
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_mult(pos,$1,$3);
+                    $$ = new ast_mult($1->pos,$1,$3);
                 }
                 | term T_RDIV factor
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_divide(pos,$1,$3);
+                    $$ = new ast_divide($1->pos,$1,$3);
                 }
                 | term T_IDIV factor
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_idiv(pos,$1,$3);
+                    $$ = new ast_idiv($1->pos,$1,$3);
                 }
                 | term T_MOD factor
                 {
                     /* Your code here */
-                    position_information *pos =
-                        new position_information(@1.first_line,
-                                             @1.first_column);
-                    $$ = new ast_mod(pos,$1,$3);
+                    $$ = new ast_mod($1->pos,$1,$3);
                 }
                 ;
 
@@ -917,14 +945,13 @@ func_call       : func_id T_LEFTPAR opt_expr_list T_RIGHTPAR
                 }
                 |
                 {
-                    $$ = NULL; //TODO: We added this
+                    //$$ = NULL; //TODO: We added this
                 }
                 ;
 
 
 integer         : T_INTNUM
                 {
-                    printf("INTEGER: %s\n", sym_tab->pool_lookup($1));
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -938,7 +965,6 @@ integer         : T_INTNUM
 
 real            : T_REALNUM
                 {
-                    printf("REAL: %s\n", sym_tab->pool_lookup($1));
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
