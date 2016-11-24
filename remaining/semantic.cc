@@ -43,6 +43,24 @@ bool semantic::chk_param(ast_id *env,
                         ast_expr_list *actuals)
 {
     /* Your code here */
+    while(1)
+    {
+        if (formals == NULL || actuals == NULL)
+        {
+            if (formals != NULL || actuals != NULL)
+            {
+                error(env->pos) << "Not equal amount of parameters\n";
+            }
+            break;
+        }
+    
+        if (formals->type != actuals->last_expr->type)
+        {
+            type_error(env->pos) << "Parameter type mismatch\n";
+        }
+        formals = formals->preceding;
+        actuals = actuals->preceding;
+    }
     return true;
 }
 
@@ -52,6 +70,24 @@ void semantic::check_parameters(ast_id *call_id,
                                 ast_expr_list *param_list)
 {
     /* Your code here */
+    symbol *tmp = sym_tab->get_symbol(call_id->sym_p);
+    if (tmp->tag == SYM_FUNC)
+    {
+        function_symbol *func = tmp->get_function_symbol();
+        parameter_symbol *decl_params = func->last_parameter;
+        chk_param(call_id, decl_params, param_list);
+    }
+    else if (tmp->tag == SYM_PROC)
+    {
+        procedure_symbol *proc = tmp->get_procedure_symbol();
+        parameter_symbol *decl_params = proc->last_parameter;
+        chk_param(call_id, decl_params, param_list);
+    }
+    else
+    {
+        type_error(call_id->pos) << "The identifier is not callable" << endl;
+    }
+
 }
 
 
@@ -124,8 +160,13 @@ sym_index ast_expr_list::type_check()
 sym_index ast_elsif_list::type_check()
 {
     /* Your code here */
+    
+    last_elsif->type_check();
+    preceding->type_check();
+
     return void_type;
 }
+
 
 
 /* "type check" an indentifier. We need to separate nametypes from other types
@@ -143,7 +184,17 @@ sym_index ast_id::type_check()
 sym_index ast_indexed::type_check()
 {
     /* Your code here */
-    return void_type;
+    symbol *arr = sym_tab->get_symbol(id->sym_p);
+    if (arr->tag != SYM_ARRAY)
+    {
+        error(pos) << "Can't index non-array identifier!\n";
+        return void_type;
+    }
+    if (index->type != integer_type)
+    {
+        type_error(index->pos) << "Index must be of type integer!\n";
+    }
+    return arr->type;
 }
 
 
@@ -154,25 +205,51 @@ sym_index ast_indexed::type_check()
 sym_index semantic::check_binop1(ast_binaryoperation *node)
 {
     /* Your code here */
-    return void_type; // You don't have to use this method but it might be convenient
+    sym_index left_type = node->left->type_check();
+    sym_index right_type = node->right->type_check();
+    if (left_type == void_type)
+    {
+        type_error(node->left->pos) << "First operand is of type void\n";
+    }
+    else if (right_type == void_type)
+    {
+        type_error(node->left->pos) << "Second operand is of type void\n";
+    }
+    else if ( left_type != right_type )
+    {
+        if (left_type == integer_type)
+        {
+            ast_cast *cast = new ast_cast(node->left->pos, node->left);
+            node->left = cast;
+            return real_type;
+        }
+        else
+        {
+            ast_cast *cast = new ast_cast(node->right->pos, node->right);
+            node->right = cast;
+            return real_type;
+        }
+    }
+    return integer_type; // You don't have to use this method but it might be convenient
 }
+
 
 sym_index ast_add::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop1(this);
 }
 
 sym_index ast_sub::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop1(this);
 }
 
 sym_index ast_mult::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop1(this);
 }
 
 /* Divide is a special case, since it always returns real. We make sure the
@@ -180,7 +257,7 @@ sym_index ast_mult::type_check()
 sym_index ast_divide::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop1(this);
 }
 
 
@@ -194,33 +271,37 @@ sym_index ast_divide::type_check()
 sym_index semantic::check_binop2(ast_binaryoperation *node, string s)
 {
     /* Your code here */
-    return void_type;
+    if (node->left->type_check() == integer_type 
+        && node->right->type_check() == integer_type)
+    {
+        type_error(node->pos) << s << endl;
+    }
+    return integer_type;
 }
 
 sym_index ast_or::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
 }
 
 sym_index ast_and::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
 }
 
 sym_index ast_idiv::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
 }
 
 sym_index ast_mod::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
 }
-
 
 
 /* Convienience method for all binary relations, since they're all typechecked
@@ -228,31 +309,47 @@ sym_index ast_mod::type_check()
 sym_index semantic::check_binrel(ast_binaryrelation *node)
 {
     /* Your code here */
-    return void_type;
+    sym_index left_type = node->left->type_check();
+    sym_index right_type = node->right->type_check();
+    if (left_type != right_type)
+    {
+        if (left_type != real_type)
+        {
+            ast_cast *cast = new ast_cast(node->left->pos, node->left);
+            node->left = cast;
+            type_error(node->pos) << "AADGFSD\n";
+        }
+        else
+        {
+            ast_cast *cast = new ast_cast(node->right->pos, node->right);
+            node->right = cast;
+        }
+    }
+    return integer_type;
 }
 
 sym_index ast_equal::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binrel(this);
 }
 
 sym_index ast_notequal::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binrel(this);
 }
 
 sym_index ast_lessthan::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binrel(this);
 }
 
 sym_index ast_greaterthan::type_check()
 {
     /* Your code here */
-    return void_type;
+    return type_checker->check_binrel(this);
 }
 
 
@@ -262,6 +359,7 @@ sym_index ast_greaterthan::type_check()
 sym_index ast_procedurecall::type_check()
 {
     /* Your code here */
+    type_checker->check_parameters(id, parameter_list);
     return void_type;
 }
 
@@ -269,6 +367,20 @@ sym_index ast_procedurecall::type_check()
 sym_index ast_assign::type_check()
 {
     /* Your code here */
+    sym_index lhs_type = lhs->type_check();
+    sym_index rhs_type = rhs->type_check();
+
+
+    if(lhs_type != rhs_type){
+        if( lhs_type == real_type && rhs_type == integer_type ){
+            ast_cast *cast = new ast_cast(rhs->pos,rhs);
+            rhs = cast;
+        }
+        else
+            type_error(rhs->pos) << "Type mismatch for assignment" << endl;
+    }
+
+    
     return void_type;
 }
 
@@ -290,6 +402,14 @@ sym_index ast_while::type_check()
 sym_index ast_if::type_check()
 {
     /* Your code here */
+
+    if(condition->type_check() != integer_type)
+        type_error(condition->pos) << "Conditional must be an integer" << endl;
+
+    if (body != NULL) {
+        body->type_check();
+    }
+
     return void_type;
 }
 
@@ -337,23 +457,35 @@ sym_index ast_return::type_check()
     return void_type;
 }
 
-
 sym_index ast_functioncall::type_check()
 {
     /* Your code here */
-    return void_type;
+    type_checker->check_parameters(id, parameter_list);
+    return type;
 }
 
 sym_index ast_uminus::type_check()
 {
     /* Your code here */
-    return void_type;
+    if(type == void_type)
+    {
+        type_error(pos) << "Type is null" << endl;
+    }
+
+    return type;
+    //return void_type
 }
 
 sym_index ast_not::type_check()
 {
     /* Your code here */
-    return void_type;
+
+    if(type == void_type)
+    {
+        type_error(pos) << "Type is null" << endl;
+    }
+    return type;
+    //return void_type;
 }
 
 

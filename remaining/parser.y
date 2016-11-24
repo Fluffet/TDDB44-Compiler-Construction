@@ -38,7 +38,7 @@ extern bool assembler;
 
 
 #define YYDEBUG 1
-#define P_DEBUG 0
+#define P_DEBUG 1
 
 void print_debug(string s){
 #if P_DEBUG == 1
@@ -131,8 +131,9 @@ void print_debug(string s){
 
 program         : prog_decl subprog_part comp_stmt T_DOT
                 {
-
+                    print_debug("program START");
                     symbol *env = sym_tab->get_symbol($1->sym_p);
+                    cout << $1 << endl << endl << $3 << endl << endl;
 
                     // The status variables here depend on what flags were
                     // passed to the compiler. See the 'diesel' script for
@@ -285,7 +286,7 @@ var_decl        : T_IDENT T_COLON type_id T_SEMICOLON
                 | T_IDENT T_COLON T_ARRAY T_LEFTBRACKET integer T_RIGHTBRACKET T_OF type_id T_SEMICOLON
                 {
                     /* Your code here */
-                     print_debug("var_decl 2 START\n");
+                    print_debug("var_decl 2 START\n");
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
@@ -293,7 +294,8 @@ var_decl        : T_IDENT T_COLON type_id T_SEMICOLON
                                          $1,
                                          $8->sym_p,
                                          $5->value);
-                     print_debug("var_decl 2 DONE\n");
+                    printf("Entered array of type %ld.\n", $8->sym_p);
+                    print_debug("var_decl 2 DONE\n");
 
                 }
                 | T_IDENT T_COLON T_ARRAY T_LEFTBRACKET const_id T_RIGHTBRACKET T_OF type_id T_SEMICOLON
@@ -585,8 +587,10 @@ param           : T_IDENT T_COLON type_id
 comp_stmt       : T_BEGIN stmt_list T_END
                 {
                     /* Your code here */
-                    print_debug("begin read\n");
+                    print_debug("comp_stmt START\n");
+                    cout << $2 << endl;
                     $$ = $2;
+                    print_debug("comp_stmt END\n");
                 }
                 ;
 
@@ -594,7 +598,7 @@ comp_stmt       : T_BEGIN stmt_list T_END
 stmt_list       : stmt
                 {
                     /* Your code here */
-
+                    print_debug("stmt_list => stmt");
                     if ($1 != NULL)
                     {
                         $$ = new ast_stmt_list($1->pos, $1);
@@ -603,13 +607,15 @@ stmt_list       : stmt
                     {
                         $$ = NULL;
                     }
+                    print_debug("stmt_list => stmt END");
                 }
                  // stmt T_SEMICOLON stmt T_SEMICOLON stmt(empty)
                 | stmt_list T_SEMICOLON stmt 
                 {
                     /* Your code here */
                     //cout << endl;
-                    print_debug("stmt_list 2 Start");
+                    print_debug("stmt_list => stmt_list; stmt");
+                    //print_debug("stmt_list 2 Start");
                     //cout << $1 << endl << endl;
                     if ($1 != NULL && $3 != NULL)
                     {
@@ -623,7 +629,8 @@ stmt_list       : stmt
                     {
                         $$ = $1;
                     }
-                    print_debug("stmt_list 2 END");
+                    print_debug("stmt_list => stmt_list; stmt END");
+                    //print_debug("stmt_list 2 END");
                 }
 
                 ;
