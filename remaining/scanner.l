@@ -33,10 +33,10 @@ extern YYLTYPE yylloc; // Used for position information, see below.
 %x d_comment
 DIGIT [0-9]
 /* {DIGIT}+"."{DIGIT}*
- ID [a-z][a-z0-9]* */
+ ID [a-z][a-z0-9_]* */
 
 REAL (({DIGIT}+\.?{DIGIT}*|\.{DIGIT}+)[eE][-+]?{DIGIT}+)|({DIGIT}*\.{DIGIT}+)|({DIGIT}+\.)
-ID [a-zA-Z][a-zA-Z0-9]*
+ID [a-zA-Z][a-zA-Z0-9_]*
 VALID_STR '([^'\n]|'')*'
 NEWLINE_ERROR_STRING '([^'\n]|'')*\n
 

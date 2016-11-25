@@ -43,20 +43,32 @@ bool semantic::chk_param(ast_id *env,
                         ast_expr_list *actuals)
 {
     /* Your code here */
-    while(1)
+    int i = 0;
+    position_information *pos;
+    if (actuals != NULL)
     {
-        if (formals == NULL || actuals == NULL)
-        {
-            if (formals != NULL || actuals != NULL)
-            {
-                error(env->pos) << "Not equal amount of parameters\n";
-            }
+        pos = actuals->pos;
+    }
+    else
+    {
+        pos = env->pos;
+    }
+    while(formals != NULL || actuals != NULL)
+    {
+        if (actuals == NULL){
+            type_error(pos) << "More formal than actual parameters\n";
             break;
         }
-    
+        else if (formals == NULL){
+            type_error(pos) << "More actual than formal parameters\n";
+            break;
+        }
+        cout << i << ": Actual: " << actuals->last_expr->type << ". Formals: " << formals->type << endl;
+        i++;
         if (formals->type != actuals->last_expr->type)
         {
-            type_error(env->pos) << "Parameter type mismatch\n";
+            type_error(pos) << "Type discrepancy between formal and actual parameters\n";
+            return true;
         }
         formals = formals->preceding;
         actuals = actuals->preceding;
@@ -151,6 +163,9 @@ sym_index ast_stmt_list::type_check()
 sym_index ast_expr_list::type_check()
 {
     /* Your code here */
+    last_expr->type_check();
+    preceding->type_check();
+
     return void_type;
 }
 
@@ -190,7 +205,7 @@ sym_index ast_indexed::type_check()
         error(pos) << "Can't index non-array identifier!\n";
         return void_type;
     }
-    if (index->type != integer_type)
+    if (index->type_check() != integer_type) //TODO: type_check on ast_expression?
     {
         type_error(index->pos) << "Index must be of type integer!\n";
     }
@@ -205,8 +220,8 @@ sym_index ast_indexed::type_check()
 sym_index semantic::check_binop1(ast_binaryoperation *node)
 {
     /* Your code here */
-    sym_index left_type = node->left->type_check();
-    sym_index right_type = node->right->type_check();
+    sym_index left_type = node->left->type_check();//TODO: type_check on ast_expression?
+    sym_index right_type = node->right->type_check();//TODO: type_check on ast_expression?
     if (left_type == void_type)
     {
         type_error(node->left->pos) << "First operand is of type void\n";
@@ -230,6 +245,7 @@ sym_index semantic::check_binop1(ast_binaryoperation *node)
             return real_type;
         }
     }
+
     return integer_type; // You don't have to use this method but it might be convenient
 }
 
@@ -257,7 +273,8 @@ sym_index ast_mult::type_check()
 sym_index ast_divide::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop1(this);
+    type_checker->check_binop1(this);
+    return real_type;
 }
 
 
@@ -271,8 +288,8 @@ sym_index ast_divide::type_check()
 sym_index semantic::check_binop2(ast_binaryoperation *node, string s)
 {
     /* Your code here */
-    if (node->left->type_check() == integer_type 
-        && node->right->type_check() == integer_type)
+    if (node->left->type != integer_type 
+        || node->right->type != integer_type)
     {
         type_error(node->pos) << s << endl;
     }
@@ -282,19 +299,19 @@ sym_index semantic::check_binop2(ast_binaryoperation *node, string s)
 sym_index ast_or::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
+    return type_checker->check_binop2(this, "Both operands of a or (bool) operation must be integers!");
 }
 
 sym_index ast_and::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
+    return type_checker->check_binop2(this, "Both operands of an and (bool) operation must be integers!");
 }
 
 sym_index ast_idiv::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
+    return type_checker->check_binop2(this, "Both operands of an integer division must be integers!");
 }
 
 sym_index ast_mod::type_check()
@@ -377,7 +394,7 @@ sym_index ast_assign::type_check()
             rhs = cast;
         }
         else
-            type_error(rhs->pos) << "Type mismatch for assignment" << endl;
+            type_error(rhs->pos) << "Can't assign a real value to integer variable\n";
     }
 
     
@@ -461,6 +478,7 @@ sym_index ast_functioncall::type_check()
 {
     /* Your code here */
     type_checker->check_parameters(id, parameter_list);
+
     return type;
 }
 
@@ -492,6 +510,14 @@ sym_index ast_not::type_check()
 sym_index ast_elsif::type_check()
 {
     /* Your code here */
+
+    if(condition->type_check() != integer_type)
+        type_error(condition->pos) << "Conditional must be an integer" << endl;
+
+    if (body != NULL) {
+        body->type_check();
+    }
+
     return void_type;
 }
 

@@ -38,7 +38,7 @@ extern bool assembler;
 
 
 #define YYDEBUG 1
-#define P_DEBUG 1
+#define P_DEBUG 0
 
 void print_debug(string s){
 #if P_DEBUG == 1
@@ -133,7 +133,7 @@ program         : prog_decl subprog_part comp_stmt T_DOT
                 {
                     print_debug("program START");
                     symbol *env = sym_tab->get_symbol($1->sym_p);
-                    cout << $1 << endl << endl << $3 << endl << endl;
+                    //cout << $1 << endl << endl << $3 << endl << endl;
 
                     // The status variables here depend on what flags were
                     // passed to the compiler. See the 'diesel' script for
@@ -195,9 +195,8 @@ prog_head       : T_PROGRAM T_IDENT
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
-
-                    $$ = new ast_procedurehead(pos,$2);
-                    sym_tab->enter_procedure(pos, $2);
+                    sym_index sym_p = sym_tab->enter_procedure(pos, $2);
+                    $$ = new ast_procedurehead(pos,sym_p);
                     sym_tab->open_scope();
                 }
                 ;
@@ -588,7 +587,7 @@ comp_stmt       : T_BEGIN stmt_list T_END
                 {
                     /* Your code here */
                     print_debug("comp_stmt START\n");
-                    cout << $2 << endl;
+                    //cout << $2 << endl;
                     $$ = $2;
                     print_debug("comp_stmt END\n");
                 }
@@ -747,7 +746,7 @@ rvariable       : rvar_id
 elsif_list      : elsif_list elsif
                 {
                     /* Your code here */
-                    $$ = new ast_elsif_list($1->pos, $2, $1);
+                    $$ = new ast_elsif_list($2->pos, $2, $1);
                 }
                 | /* empty */
                 {
@@ -1108,3 +1107,6 @@ id              : T_IDENT
 
 
 %%
+
+
+//TODO: Check back reference for procedures nad functions (semtest1.d)
