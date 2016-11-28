@@ -270,6 +270,7 @@ void symbol_table::print(int detail)
 
             cout.flags(ios::left);
             cout << setw(10);
+            //cout << endl << "HERE: " << tmp->type << endl; 
             cout << pool_lookup(sym_table[tmp->type]->id);
             cout << setw(14);
             switch (tmp->tag) {
@@ -559,7 +560,7 @@ sym_index symbol_table::close_scope()
         temp--;
     }
 
-    block_table[current_level] = 0;
+    block_table[current_level] = 0; //TODO: dafuq? Needed? fucks things up?
     current_level--;
 
     //cout << "closed scope\n";
@@ -608,6 +609,8 @@ sym_index symbol_table::lookup_symbol(const pool_index pool_p)
 
 symbol *symbol_table::get_symbol(const sym_index sym_p)
 {
+    //cout << "Getting symbol: " << sym_p << endl;
+    //print(1);
     if (sym_p == NULL_SYM) {
         return NULL;
     }
@@ -987,6 +990,7 @@ sym_index symbol_table::enter_function(position_information *pos,
     func->tag = SYM_FUNC;
     // Parameters are added later on.
     func->last_parameter = NULL;
+    //func->type = void_type; //TODO: Added for print debugging
 
     // This will grow as local variables and temporaries are added.
     func->ar_size = 0;

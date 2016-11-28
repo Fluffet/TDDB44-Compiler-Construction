@@ -64,6 +64,7 @@ procedure_symbol::procedure_symbol(const pool_index pool_p) :
 {
     ar_size = 0;
     label_nr = 0;
+    offset = 0;
     last_parameter = NULL;
 }
 
@@ -74,6 +75,7 @@ function_symbol::function_symbol(const pool_index pool_p) :
 {
     ar_size = 0;
     label_nr = 0;
+    offset = 0;
     last_parameter = NULL;
 }
 

@@ -43,7 +43,6 @@ bool semantic::chk_param(ast_id *env,
                         ast_expr_list *actuals)
 {
     /* Your code here */
-    int i = 0;
     position_information *pos;
     if (actuals != NULL)
     {
@@ -56,18 +55,16 @@ bool semantic::chk_param(ast_id *env,
     while(formals != NULL || actuals != NULL)
     {
         if (actuals == NULL){
-            type_error(pos) << "More formal than actual parameters\n";
+            type_error(pos) << "More formal than actual parameters.\n";
             break;
         }
         else if (formals == NULL){
-            type_error(pos) << "More actual than formal parameters\n";
+            type_error(pos) << "More actual than formal parameters.\n";
             break;
         }
-        cout << i << ": Actual: " << actuals->last_expr->type << ". Formals: " << formals->type << endl;
-        i++;
-        if (formals->type != actuals->last_expr->type)
+        if (formals->type != actuals->last_expr->type_check())
         {
-            type_error(pos) << "Type discrepancy between formal and actual parameters\n";
+            type_error(pos) << "Type discrepancy between formal and actual parameters.\n";
             return true;
         }
         formals = formals->preceding;
@@ -222,15 +219,18 @@ sym_index semantic::check_binop1(ast_binaryoperation *node)
     /* Your code here */
     sym_index left_type = node->left->type_check();//TODO: type_check on ast_expression?
     sym_index right_type = node->right->type_check();//TODO: type_check on ast_expression?
+    bool fail = false;
     if (left_type == void_type)
     {
         type_error(node->left->pos) << "First operand is of type void\n";
+        fail = true;
     }
-    else if (right_type == void_type)
+    if (right_type == void_type)
     {
-        type_error(node->left->pos) << "Second operand is of type void\n";
+        type_error(node->right->pos) << "Second operand is of type void\n";
+        fail = true;
     }
-    else if ( left_type != right_type )
+    if ( left_type != right_type && !fail )
     {
         if (left_type == integer_type)
         {
@@ -253,19 +253,22 @@ sym_index semantic::check_binop1(ast_binaryoperation *node)
 sym_index ast_add::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop1(this);
+    type = type_checker->check_binop1(this);
+    return type;
 }
 
 sym_index ast_sub::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop1(this);
+    type = type_checker->check_binop1(this);
+    return type;
 }
 
 sym_index ast_mult::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop1(this);
+    type = type_checker->check_binop1(this);
+    return type;
 }
 
 /* Divide is a special case, since it always returns real. We make sure the
@@ -273,8 +276,30 @@ sym_index ast_mult::type_check()
 sym_index ast_divide::type_check()
 {
     /* Your code here */
-    type_checker->check_binop1(this);
-    return real_type;
+    sym_index left_type = left->type_check();//TODO: type_check on ast_expression?
+    sym_index right_type = right->type_check();//TODO: type_check on ast_expression?
+    if (left_type == void_type)
+    {
+        type_error(left->pos) << "First operand is of type void\n";
+    }
+    if (right_type == void_type)
+    {
+        type_error(left->pos) << "Second operand is of type void\n";
+    }
+    
+
+    if (left_type == integer_type)
+    {
+        ast_cast *cast = new ast_cast(left->pos, left);
+        left = cast;
+    }
+    if (right_type == integer_type)
+    {
+        ast_cast *cast = new ast_cast(right->pos, right);
+        right = cast;
+    }
+    type = real_type;
+    return type;
 }
 
 
@@ -288,8 +313,9 @@ sym_index ast_divide::type_check()
 sym_index semantic::check_binop2(ast_binaryoperation *node, string s)
 {
     /* Your code here */
-    if (node->left->type != integer_type 
-        || node->right->type != integer_type)
+
+    if (node->left->type_check() != integer_type 
+        || node->right->type_check() != integer_type)
     {
         type_error(node->pos) << s << endl;
     }
@@ -299,25 +325,29 @@ sym_index semantic::check_binop2(ast_binaryoperation *node, string s)
 sym_index ast_or::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of a or (bool) operation must be integers!");
+    type = type_checker->check_binop2(this, "Both operands of a or (bool) operation must be integers!");
+    return type;
 }
 
 sym_index ast_and::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of an and (bool) operation must be integers!");
+    type = type_checker->check_binop2(this, "Both operands of an and (bool) operation must be integers!");
+    return type;
 }
 
 sym_index ast_idiv::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of an integer division must be integers!");
+    type = type_checker->check_binop2(this, "Both operands of an integer division must be integers!");
+    return type;
 }
 
 sym_index ast_mod::type_check()
 {
     /* Your code here */
-    return type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
+    type = type_checker->check_binop2(this, "Both operands of a mod operation must be integers!");
+    return type;
 }
 
 
@@ -328,15 +358,15 @@ sym_index semantic::check_binrel(ast_binaryrelation *node)
     /* Your code here */
     sym_index left_type = node->left->type_check();
     sym_index right_type = node->right->type_check();
+    
     if (left_type != right_type)
     {
         if (left_type != real_type)
         {
             ast_cast *cast = new ast_cast(node->left->pos, node->left);
             node->left = cast;
-            type_error(node->pos) << "AADGFSD\n";
         }
-        else
+        if (right_type != real_type)
         {
             ast_cast *cast = new ast_cast(node->right->pos, node->right);
             node->right = cast;
@@ -394,7 +424,9 @@ sym_index ast_assign::type_check()
             rhs = cast;
         }
         else
-            type_error(rhs->pos) << "Can't assign a real value to integer variable\n";
+            type_error(rhs->pos) << "Can't assign a " << sym_tab->pool_lookup(sym_tab->get_symbol_id(rhs_type)) 
+                                 << " value to " << sym_tab->pool_lookup(sym_tab->get_symbol_id(lhs_type)) 
+                                 << " variable.\n";
     }
 
     
@@ -414,6 +446,8 @@ sym_index ast_while::type_check()
     }
     return void_type;
 }
+
+
 
 
 sym_index ast_if::type_check()

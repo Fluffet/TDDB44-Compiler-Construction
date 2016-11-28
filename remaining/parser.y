@@ -175,6 +175,7 @@ program         : prog_decl subprog_part comp_stmt T_DOT
 
                     // We close the global scope.
                     sym_tab->close_scope();
+
                 }
                 ;
 
@@ -254,10 +255,23 @@ const_decl      : T_IDENT T_EQ integer T_SEMICOLON
                     position_information *pos =
                         new position_information(@1.first_line,
                                                  @1.first_column);
-
-                    sym_index s_i = sym_tab->enter_constant(pos, $1, $3->type, $3->sym_p);
+                    constant_symbol *cs = sym_tab->get_symbol($3->sym_p)->get_constant_symbol();
+                    if ($3->type == integer_type)
+                    {
+                        sym_index s_i = sym_tab->enter_constant(pos, $1, $3->type, cs->const_value.ival);
+                    }
+                    else
+                    {
+                        sym_index s_i = sym_tab->enter_constant(pos, $1, $3->type, cs->const_value.rval);
+                    }
                     
                 }
+                | error
+                {
+                    
+                    yyerrok;
+                }
+
                 ;
 
 
@@ -293,7 +307,7 @@ var_decl        : T_IDENT T_COLON type_id T_SEMICOLON
                                          $1,
                                          $8->sym_p,
                                          $5->value);
-                    printf("Entered array of type %ld.\n", $8->sym_p);
+                    
                     print_debug("var_decl 2 DONE\n");
 
                 }
@@ -638,6 +652,8 @@ stmt_list       : stmt
 stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 {
                     /* Your code here */
+
+                    
                     print_debug("stmt 1");
                     position_information *pos =
                         new position_information(@1.first_line,
@@ -647,6 +663,8 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 | T_WHILE expr T_DO stmt_list T_END
                 {
                     /* Your code here */
+                    
+                    
                     print_debug("stmt 2");
                     position_information *pos =
                         new position_information(@1.first_line,
@@ -662,12 +680,14 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                 | lvariable T_ASSIGN expr
                 {
                     /* Your code here */
+                    
                     print_debug("stmt 4");
                     $$ = new ast_assign($1->pos, $1, $3);
                 }
                 | T_RETURN expr
                 {
                     /* Your code here */
+                    
                     print_debug("stmt 5");
                     position_information *pos =
                         new position_information(@1.first_line,
@@ -683,15 +703,14 @@ stmt            : T_IF expr T_THEN stmt_list elsif_list else_part T_END
                                              @1.first_column);
                     $$ = new ast_return(pos);
                 }
-                
+                | error
+                {
+                    $$ = NULL;
+                    yyerrok;
+                }
                 | /* empty */
                 {
                     /* Your code here */
-                    $$ = NULL;
-                }
-                | error
-                {
-                    yyerrok;
                     $$ = NULL;
                 }
                 ;
@@ -702,6 +721,7 @@ lvariable       : lvar_id
                 }
                 | array_id T_LEFTBRACKET expr T_RIGHTBRACKET
                 {
+                    
                     $$ = new ast_indexed($1->pos,
                                          $1,
                                          $3);
@@ -722,6 +742,7 @@ rvariable       : rvar_id
                 | array_id T_LEFTBRACKET expr T_RIGHTBRACKET
                 {
                     /* Your code here */
+                    
                     $$ = new ast_indexed($1->pos,
                                          $1,
                                          $3);
@@ -733,12 +754,7 @@ rvariable       : rvar_id
                     yyerrok;
                     $$ = NULL;
                 }
-                | error
-                {
-                    cout << "rvariable 2 ERROR" << endl;
-                    yyerrok;
-                    $$ = NULL;
-                }
+                
 
                 ;
 
@@ -760,6 +776,7 @@ elsif           : T_ELSIF expr T_THEN stmt_list
                 {
                     /* Your code here */
                     //TODO: open scope?
+                    
                     position_information *pos =
                         new position_information(@1.first_line,
                                              @1.first_column);
@@ -783,6 +800,7 @@ else_part       : T_ELSE stmt_list
 
 opt_expr_list   : expr_list
                 {
+                    
                     /* Your code here */
                     $$ = $1;
                 }
@@ -796,12 +814,14 @@ opt_expr_list   : expr_list
 
 expr_list       : expr
                 {
+                    
                     /* Your code here */
                     $$ = new ast_expr_list($1->pos, $1);
 
                 }
                 | expr_list T_COMMA expr
                 {
+                    
                     /* Your code here */
                     $$ = new ast_expr_list($1->pos, $3, $1);
                 }
@@ -810,27 +830,32 @@ expr_list       : expr
 
 expr            : simple_expr
                 {
+                    
                     /* Your code here */
                     $$ = $1;
                 }
                 | expr T_EQ simple_expr
                 {
                     /* Your code here */
+                    
                     $$ = new ast_equal($1->pos, $1, $3);
                 }
                 | expr T_NOTEQ simple_expr
                 {
                     /* Your code here */
+                    
                     $$ = new ast_notequal($1->pos, $1, $3);
                 }
                 | expr T_LESSTHAN simple_expr
                 {
                     /* Your code here */
+                    
                     $$ = new ast_lessthan($1->pos, $1, $3);
                 }
                 | expr T_GREATERTHAN simple_expr
                 {
                     /* Your code here */
+                    
                     $$ = new ast_greaterthan($1->pos, $1, $3);
                 }
                 ;
@@ -838,6 +863,7 @@ expr            : simple_expr
 
 simple_expr     : term
                 {
+                    
                     /* Your code here */
                     $$ = $1;
                 }
@@ -877,6 +903,7 @@ simple_expr     : term
 
 term            : factor
                 {
+                    
                     /* Your code here */
                     $$ = $1;
                 }
@@ -910,6 +937,7 @@ term            : factor
 
 factor          : rvariable
                 {
+                    
                     $$ = $1;
                 }
                 | func_call
@@ -935,6 +963,7 @@ factor          : rvariable
                 }
                 | T_LEFTPAR expr T_RIGHTPAR
                 {
+                    
                     /* Your code here */
                     $$ = $2;
                 }
