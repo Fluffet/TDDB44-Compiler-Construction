@@ -2,6 +2,7 @@
 #define __SYMTAB_HH__
 
 #include "error.hh"
+#include <stdlib.h>
 
 // Set this #define to 0 after the scanner works.
 #define TEST_SCANNER 0

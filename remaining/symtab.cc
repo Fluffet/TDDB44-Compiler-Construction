@@ -172,7 +172,22 @@ long symbol_table::get_next_label()
 sym_index symbol_table::gen_temp_var(sym_index type)
 {
     /* Your code here */
-    return NULL_SYM;
+
+    string temp_name = "$";
+    temp_name = temp_name + to_string(sym_tab->temp_nr++);
+
+    char ayy_lmao[10];
+    strcpy(ayy_lmao, temp_name.c_str() );
+    pool_index pool_p = pool_install(ayy_lmao);
+    
+    if (type == integer_type)
+    {
+        return enter_variable(pool_p, integer_type);
+    }
+    else
+    {
+        return enter_variable(pool_p, real_type);
+    }
 }
 
 
