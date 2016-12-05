@@ -246,7 +246,7 @@ sym_index semantic::check_binop1(ast_binaryoperation *node)
         }
     }
 
-    return integer_type; // You don't have to use this method but it might be convenient
+    return left_type; // You don't have to use this method but it might be convenient
 }
 
 
