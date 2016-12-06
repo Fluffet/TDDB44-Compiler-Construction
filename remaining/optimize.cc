@@ -137,12 +137,8 @@ void ast_optimizer::ghett0_optimize_binop(ast_binaryoperation *node)
 {
     node->left->optimize();
     node->right->optimize();
-    ast_expression *temp = node->left;
     node->left = optimizer->fold_constants(node->left);
-    delete temp;
-    temp = node->right;
     node->right = optimizer->fold_constants(node->right);
-    delete temp;
 }
 
 /* This convenience method is used to apply constant folding to all
@@ -441,7 +437,10 @@ void ast_elsif::optimize()
     /* Your code here */
     condition->optimize();
     condition = optimizer->fold_constants(condition);
-    body->optimize();
+    if (body != NULL)
+    {
+        body->optimize();
+    }
 }
 
 

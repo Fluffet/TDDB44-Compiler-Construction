@@ -174,11 +174,16 @@ sym_index symbol_table::gen_temp_var(sym_index type)
     /* Your code here */
 
     string temp_name = "$";
-    temp_name = temp_name + to_string(sym_tab->temp_nr++);
+    temp_name = temp_name + to_string(++sym_tab->temp_nr);
 
-    char ayy_lmao[10];
-    strcpy(ayy_lmao, temp_name.c_str() );
-    pool_index pool_p = pool_install(ayy_lmao);
+    //const char * ayy_lmao = temp_name.c_str();
+    
+    char * a = (char *) calloc(temp_name.length(), sizeof(char));
+
+    strcpy( a, temp_name.c_str() );
+    
+
+    pool_index pool_p = pool_install(a);
     
     if (type == integer_type)
     {
@@ -661,7 +666,6 @@ sym_index symbol_table::get_symbol_type(const sym_index sym_p)
     if (sym_p == NULL_SYM) {
         return void_type;
     }
-
     return sym_table[sym_p]->type;
 }
 
