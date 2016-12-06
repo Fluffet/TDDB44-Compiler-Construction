@@ -228,8 +228,8 @@ sym_index ast_cast::generate_quads(quad_list &q)
 
 
 sym_index do_binaryoperation(quad_list & q, quad_op_type iop, quad_op_type rop, ast_binaryoperation * node){
-  sym_index sym_left = node->left->get_ast_binaryoperation()->generate_quads(q);
-  sym_index sym_right = node->right->get_ast_binaryoperation()->generate_quads(q);
+  sym_index sym_left = node->left->generate_quads(q);
+  sym_index sym_right = node->right->generate_quads(q);
   sym_index temp_var;
   if (sym_tab->get_symbol_type(sym_left) == integer_type)
   {
