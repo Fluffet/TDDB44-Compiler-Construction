@@ -100,6 +100,22 @@ void code_generator::prologue(symbol *new_env)
 
     /* Your code here */
 
+    // store previous rbp, save previous rsp
+    out << "\t\t" << "push" << "\t" << "rbp" << endl;
+    out << "\t\t" << "mov" << "\t" << "rcx,"+reg[RSP] << endl;
+
+    // copy display values
+    for (int i = 0; i < level ; i++){
+        
+    }
+
+
+
+    //push previous rsp on stack
+    out << "\t\t" << "push" << "\t" << "rcx" << endl;
+
+    
+
     out << flush;
 }
 
@@ -115,6 +131,9 @@ void code_generator::epilogue(symbol *old_env)
 
     /* Your code here */
 
+    out << "\t\t" << "leave" << "\t" << endl;
+    out << "\t\t" << "ret" << "\t" << endl;
+    
     out << flush;
 }
 
