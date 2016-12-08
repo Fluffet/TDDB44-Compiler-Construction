@@ -359,23 +359,18 @@ sym_index semantic::check_binrel(ast_binaryrelation *node)
     /* Your code here */
     sym_index left_type = node->left->type_check();
     sym_index right_type = node->right->type_check();
-    cout << "AAAAPA semantic::check_binrel: " << left_type << " & " << right_type << endl;
     
     if (left_type != right_type)
     {
-        cout << "BBBBBB" << endl;
         if (left_type != real_type)
         {
             ast_cast *cast = new ast_cast(node->left->pos, node->left);
             node->left = cast;
-
-             cout << "CCCCCC" << endl;
         }
         if (right_type != real_type)
         {
             ast_cast *cast = new ast_cast(node->right->pos, node->right);
             node->right = cast;
-            cout << "DDDDD" << endl;
         }
     }
     return integer_type;
@@ -390,7 +385,6 @@ sym_index ast_equal::type_check()
 sym_index ast_notequal::type_check()
 {
     /* Your code here */
-    cout << "NOTEQUAL" << endl;
     return type_checker->check_binrel(this);
 }
 
@@ -546,12 +540,12 @@ sym_index ast_uminus::type_check()
 sym_index ast_not::type_check()
 {
     /* Your code here */
-
-    if(type == void_type)
+    if(expr->type_check() == void_type)
     {
         type_error(pos) << "Type is null" << endl;
     }
-    return type;
+
+    return integer_type;
     //return void_type;
 }
 
@@ -559,7 +553,6 @@ sym_index ast_not::type_check()
 sym_index ast_elsif::type_check()
 {
     /* Your code here */
-
     if(condition->type_check() != integer_type)
         type_error(condition->pos) << "Conditional must be an integer" << endl;
 
