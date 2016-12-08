@@ -313,17 +313,15 @@ sym_index do_binaryrelation(quad_list & q, quad_op_type iop, quad_op_type rop, a
   
   sym_index sym_left = node->left->generate_quads(q);
   sym_index sym_right = node->right->generate_quads(q);
-  sym_index temp_var;
+  sym_index temp_var = sym_tab->gen_temp_var(integer_type);
 
   if (sym_tab->get_symbol_type(sym_left) == integer_type)
   {
-    temp_var = sym_tab->gen_temp_var(integer_type);
     q += new quadruple(iop, sym_left, sym_right, temp_var);
   }
   else
   {
     // Real type
-    temp_var = sym_tab->gen_temp_var(real_type);
     q += new quadruple(rop, sym_left, sym_right, temp_var);
   }
   return temp_var;
@@ -417,7 +415,7 @@ void ast_expr_list::generate_parameter_list(quad_list &q,
     USE_Q;
     sym_index param = last_expr->generate_quads(q);
     q += new quadruple(q_param, param, NULL_SYM, NULL_SYM);
-    *nr_params++;
+    (*nr_params)++;
     if (preceding != NULL)
       preceding->generate_parameter_list(q, NULL, nr_params);
     /* Your code here */
@@ -432,15 +430,13 @@ sym_index ast_procedurecall::generate_quads(quad_list &q)
     /* Your code here */
     int nr_params = 0;
 
-    sym_index address = sym_tab->gen_temp_var(integer_type);
-
     if (parameter_list != NULL)
     {
       parameter_list->generate_parameter_list(q, NULL, &nr_params);
     }
 
-    q += new quadruple(q_call, id->sym_p, nr_params, address);
-    return address;
+    q += new quadruple(q_call, id->sym_p, nr_params, NULL_SYM);
+    return NULL_SYM;
 }
 
 
