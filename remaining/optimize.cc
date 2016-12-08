@@ -155,15 +155,11 @@ ast_expression *ast_optimizer::fold_constants(ast_expression *node)
             constant_symbol *sym = sym_tab->get_symbol(id->sym_p)->get_constant_symbol();
             if (sym->type == integer_type)
             {
-                ast_integer *tmp = new ast_integer(id->pos, sym->const_value.ival);
-                free(id);
-                return tmp;
+                return new ast_integer(id->pos, sym->const_value.ival);
             }
             else
             {
-                ast_real *tmp = new ast_real(id->pos, sym->const_value.rval);
-                free(id);
-                return tmp;
+                return new ast_real(id->pos, sym->const_value.rval);
             }
         }
     }
@@ -268,16 +264,6 @@ ast_expression *ast_optimizer::fold_constants(ast_expression *node)
     }
 
 
-
-    /*if ( is_binop(node) )
-    {
-        ast_expression *l = node->left;
-        ast_expression *r = node->right;
-        if (l->tag == AST_INTEGER && r->tag == AST_INTEGER) {
-            return new ast_integer(l->pos, 0);
-        }
-    }*/
-    
     return node;
 }
 
@@ -451,7 +437,10 @@ void ast_elsif::optimize()
     /* Your code here */
     condition->optimize();
     condition = optimizer->fold_constants(condition);
-    body->optimize();
+    if (body != NULL)
+    {
+        body->optimize();
+    }
 }
 
 
