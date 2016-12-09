@@ -68,6 +68,8 @@ void code_generator::prologue(symbol *new_env)
     // Used to count parameters.
     parameter_symbol *last_arg;
 
+    block_level level;
+
     // Again, we need a safe downcast for a procedure/function.
     // Note that since we have already generated quads for the entire block
     // before we expand it to assembler, the size of the activation record
@@ -77,12 +79,14 @@ void code_generator::prologue(symbol *new_env)
         ar_size = align(proc->ar_size);
         label_nr = proc->label_nr;
         last_arg = proc->last_parameter;
+        level = proc->level;
     } else if (new_env->tag == SYM_FUNC) {
         function_symbol *func = new_env->get_function_symbol();
         /* Make sure ar_size is a multiple of eight */
         ar_size = align(func->ar_size);
         label_nr = func->label_nr;
         last_arg = func->last_parameter;
+        level = func->level;
     } else {
         fatal("code_generator::prologue() called for non-proc/func");
         return;
@@ -102,18 +106,18 @@ void code_generator::prologue(symbol *new_env)
 
     // store previous rbp, save previous rsp
     out << "\t\t" << "push" << "\t" << "rbp" << endl;
-    out << "\t\t" << "mov" << "\t" << "rcx,"+reg[RSP] << endl;
+    out << "\t\t" << "mov" << "\t" << "rcx, rsp" << endl;
 
     // copy display values
-    for (int i = 0; i < level ; i++){
-        
+    for (int i = 1; i <= level; i++){
+        out << "\t\t" << "push" << "\t" << "[rbp-" << i*STACK_WIDTH << "]" << endl;
     }
-
 
 
     //push previous rsp on stack
     out << "\t\t" << "push" << "\t" << "rcx" << endl;
-
+    out << "\t\t" << "mov" << "\t" << "rbp, rcx" << endl;
+    out << "\t\t" << "sub" << "\t" << "rsp, " << ar_size << endl;
     
 
     out << flush;
@@ -144,6 +148,24 @@ void code_generator::epilogue(symbol *old_env)
 void code_generator::find(sym_index sym_p, int *level, int *offset)
 {
     /* Your code here */
+    symbol *sym = sym_tab->get_symbol(sym_p);
+    *level = sym->level;
+    sym_type tag = sym->tag;
+    if (tag == SYM_VAR || tag == SYM_ARRAY)
+    {
+        printf("Variable: \"%s\". Symbol offset: %d\n", sym_tab->pool_lookup(sym->id), sym->offset);
+    
+        //Offset for local variable's are the display area plus it's internal offset
+        *offset = -((*level+1)*STACK_WIDTH + sym->offset);
+
+    }
+    else //PARAM
+    {   
+        // Jump over previous return address + the offset of the param
+        // in the param list. Then get to the start of the param b its size
+        printf("Parameter: \"%s\". Symbol offset: %d\n", sym_tab->pool_lookup(sym->id), sym->offset);
+        *offset = STACK_WIDTH + sym->offset + sym->get_parameter_symbol()->size;
+    }
 }
 
 /*
@@ -152,6 +174,7 @@ void code_generator::find(sym_index sym_p, int *level, int *offset)
 void code_generator::frame_address(int level, const register_type dest)
 {
     /* Your code here */
+    out << "\t\t" << "mov" << "\t" << reg[dest] << ", [rbp-" << (level+1)*STACK_WIDTH << "]" << endl;
 }
 
 /* This function fetches the value of a variable or a constant into a
@@ -159,6 +182,52 @@ void code_generator::frame_address(int level, const register_type dest)
 void code_generator::fetch(sym_index sym_p, register_type dest)
 {
     /* Your code here */
+    symbol *sym = sym_tab->get_symbol(sym_p);
+    sym_type tag = sym->tag;
+    if (tag == SYM_CONST) 
+    {
+        constant_symbol *cs = sym->get_constant_symbol();
+        long value;
+        if (cs->type == real_type)
+        {
+            value = sym_tab->ieee(cs->const_value.rval);
+        }
+        else
+        {
+            value = cs->const_value.ival;
+        }
+        out << "\t\t" << "mov " << reg[dest] << ", " << value << endl;
+    }
+    else if (tag == SYM_VAR)
+    {
+        int level, offset;
+        find(sym_p, &level, &offset);
+        frame_address(level, RCX);
+        out << "\t\t" << "mov" << "\t" << reg[dest] << ", [rcx";
+        if (offset > 0)
+        {
+            out << "+" << offset;
+        }
+        else if (offset < 0)
+        {
+            out << offset;
+        }
+        out << "]" << endl;
+        
+        cout << "\t\t" << "mov" << "\t" << reg[dest] << ", [rcx";
+        if (offset > 0)
+        {
+            cout << "+" << offset;
+        }
+        else if (offset < 0)
+        {
+            cout << offset;
+        }
+        cout << "]" << endl;
+
+    }
+
+
 }
 
 void code_generator::fetch_float(sym_index sym_p)
