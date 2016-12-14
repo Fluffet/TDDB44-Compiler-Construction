@@ -385,7 +385,6 @@ sym_index ast_equal::type_check()
 sym_index ast_notequal::type_check()
 {
     /* Your code here */
-    cout << "NOTEQUAL" << endl;
     return type_checker->check_binrel(this);
 }
 

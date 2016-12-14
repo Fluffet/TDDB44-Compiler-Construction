@@ -68,7 +68,7 @@ void code_generator::prologue(symbol *new_env)
     int ar_size;
     int label_nr;
     // Used to count parameters.
-    parameter_symbol *last_arg;
+    //parameter_symbol *last_arg;
 
     block_level level;
 
@@ -80,14 +80,14 @@ void code_generator::prologue(symbol *new_env)
         procedure_symbol *proc = new_env->get_procedure_symbol();
         ar_size = align(proc->ar_size);
         label_nr = proc->label_nr;
-        last_arg = proc->last_parameter;
+        //last_arg = proc->last_parameter;
         level = proc->level;
     } else if (new_env->tag == SYM_FUNC) {
         function_symbol *func = new_env->get_function_symbol();
         /* Make sure ar_size is a multiple of eight */
         ar_size = align(func->ar_size);
         label_nr = func->label_nr;
-        last_arg = func->last_parameter;
+        //last_arg = func->last_parameter;
         level = func->level;
     } else {
         fatal("code_generator::prologue() called for non-proc/func");
@@ -685,7 +685,6 @@ void code_generator::expand(quad_list *q_list)
         case q_param: {
             /* Your code here */
             sym_type tag = sym_tab->get_symbol_tag(q->sym1);
-            printf("FLUFFAREASDUMBASHELOOKS: %d\n", (int)tag);
             if (tag == SYM_VAR)
             {
                 int level, offset;
@@ -701,16 +700,16 @@ void code_generator::expand(quad_list *q_list)
                     STREAM << offset;
                 }
                 STREAM << "]" << endl;
-
+                STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
             }
-            else
+            else if (tag == SYM_CONST)
             {
                 constant_symbol *con_s = sym_tab->get_symbol(q->sym1)->get_constant_symbol();
                 sym_index type = con_s->type;
                 STREAM << "\t\t" << "mov" << "\t" << "rax, ";
                 STREAM << (type == integer_type ? con_s->const_value.ival : con_s->const_value.rval) << endl;
+                STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
             }
-            STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
             break;
         }
 

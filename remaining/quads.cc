@@ -236,7 +236,6 @@ sym_index ast_cast::generate_quads(quad_list &q)
 sym_index do_binaryoperation(quad_list & q, quad_op_type iop, quad_op_type rop, ast_binaryoperation * node){
   sym_index sym_left = node->left->generate_quads(q);
   sym_index sym_right = node->right->generate_quads(q);
-  //sym_type tag = sym_tab->get_symbol_tag(sym_left);
   sym_index temp_var;
   if (sym_tab->get_symbol_type(sym_left) == integer_type)
   {
@@ -550,8 +549,6 @@ sym_index ast_if::generate_quads(quad_list &q)
     {
       bottom_lbl = sym_tab->get_next_label();
     }
-
-    printf("elsif_lbl: %d. bottom_lbl: %d\n", elsif_lbl, bottom_lbl);
 
     sym_index pos = condition->generate_quads(q);
     q += new quadruple(q_jmpf, elsif_lbl, pos, NULL_SYM);
