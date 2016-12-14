@@ -359,23 +359,18 @@ sym_index semantic::check_binrel(ast_binaryrelation *node)
     /* Your code here */
     sym_index left_type = node->left->type_check();
     sym_index right_type = node->right->type_check();
-    cout << "AAAAPA semantic::check_binrel: " << left_type << " & " << right_type << endl;
-    
+   
     if (left_type != right_type)
     {
-        cout << "BBBBBB" << endl;
         if (left_type != real_type)
         {
             ast_cast *cast = new ast_cast(node->left->pos, node->left);
             node->left = cast;
-
-             cout << "CCCCCC" << endl;
         }
         if (right_type != real_type)
         {
             ast_cast *cast = new ast_cast(node->right->pos, node->right);
             node->right = cast;
-            cout << "DDDDD" << endl;
         }
     }
     return integer_type;
