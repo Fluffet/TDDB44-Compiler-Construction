@@ -685,7 +685,15 @@ void code_generator::expand(quad_list *q_list)
         case q_param: {
             /* Your code here */
             sym_type tag = sym_tab->get_symbol_tag(q->sym1);
-            if (tag == SYM_VAR)
+            if (tag == SYM_CONST)
+            {
+                constant_symbol *con_s = sym_tab->get_symbol(q->sym1)->get_constant_symbol();
+                sym_index type = con_s->type;
+                STREAM << "\t\t" << "mov" << "\t" << "rax, ";
+                STREAM << (type == integer_type ? con_s->const_value.ival : con_s->const_value.rval) << endl;
+                STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
+            }
+            else
             {
                 int level, offset;
                 find(q->sym1, &level, &offset);
@@ -702,14 +710,7 @@ void code_generator::expand(quad_list *q_list)
                 STREAM << "]" << endl;
                 STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
             }
-            else if (tag == SYM_CONST)
-            {
-                constant_symbol *con_s = sym_tab->get_symbol(q->sym1)->get_constant_symbol();
-                sym_index type = con_s->type;
-                STREAM << "\t\t" << "mov" << "\t" << "rax, ";
-                STREAM << (type == integer_type ? con_s->const_value.ival : con_s->const_value.rval) << endl;
-                STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
-            }
+            
             break;
         }
 
@@ -720,6 +721,7 @@ void code_generator::expand(quad_list *q_list)
             {
                 function_symbol *fun_s = sym_tab->get_symbol(q->sym1)->get_function_symbol();
                 STREAM << "\t\t" << "call" << "\t" << "L" << fun_s->label_nr << endl;
+                store(RAX, q->sym3);
             }
             else if (tag == SYM_PROC)
             {
@@ -730,6 +732,7 @@ void code_generator::expand(quad_list *q_list)
             {
                 STREAM << "\t\t" << "add" << "\t" << "rsp, " << q->int2*STACK_WIDTH << endl; //TODO: If parameter bigger than 8?
             }
+
             break;
         }
         case q_rreturn:
