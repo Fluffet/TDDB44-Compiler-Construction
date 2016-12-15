@@ -166,7 +166,7 @@ void code_generator::find(sym_index sym_p, int *level, int *offset)
         // Jump over previous return address + the offset of the param
         // in the param list. Then get to the start of the param b its size
         //printf("Parameter: \"%s\". Symbol offset: %d\n", sym_tab->pool_lookup(sym->id), sym->offset);
-        *offset = STACK_WIDTH + sym->offset + sym->get_parameter_symbol()->size;
+        *offset = STACK_WIDTH*2 + sym->offset;
     }
 }
 
@@ -244,18 +244,21 @@ void code_generator::fetch_float(sym_index sym_p)
     {
         constant_symbol *cs = sym->get_constant_symbol();
         long value = sym_tab->ieee(cs->const_value.rval);
-        STREAM << "\t\t" << "sub" << "\t" << "rsp, " << STACK_WIDTH << endl;
-        STREAM << "\t\t" << "push" << "\t" << value << endl;
-        STREAM << "\t\t" << "fld qword ptr" << "\t" << "[rsp]" << endl;
+        
+        STREAM << "\t\t" << "mov" << "\t" << "rcx, " << value << endl;
+        STREAM << "\t\t" << "push" << "\t" << "rcx" << endl;
+        //STREAM << "\t\t" << "sub" << "\t" << "rsp, " << STACK_WIDTH << endl;
+        //STREAM << "\t\t" << "mov" << "\t" << "[rsp], rcx" << endl;
+        STREAM << "\t\t" << "fld" << "\t" << "qword ptr [rsp]" << endl;
         STREAM << "\t\t" << "add" << "\t" << "rsp, " << STACK_WIDTH << endl;
     }
-    else if (tag == SYM_VAR)
+    else
     {
         int level, offset;
         find(sym_p, &level, &offset);
         frame_address(level, RCX);
         
-        STREAM << "\t\t" << "fld qword ptr" << "\t" << "[rcx";
+        STREAM << "\t\t" << "fld" << "\t" << "qword ptr [rcx";
         if (offset > 0)
         {
             STREAM << "+" << offset;
@@ -265,11 +268,8 @@ void code_generator::fetch_float(sym_index sym_p)
             STREAM << offset;
         }
         STREAM << "]" << endl;
-
-        //STREAM << "\t\t" << "fld" << "\t" << "rsp" << endl;
-        
-
     }
+
 }
 
 
@@ -301,7 +301,7 @@ void code_generator::store_float(sym_index sym_p)
     int level, offset;
     find(sym_p, &level, &offset);
     frame_address(level, RCX);
-    STREAM << "\t\t" << "fstp qword ptr" << "\t"  << "[rbp";
+    STREAM << "\t\t" << "fstp" << "\t"  << "qword ptr [rcx";
     if (offset > 0)
     {
         STREAM << "+" << offset;
@@ -684,8 +684,18 @@ void code_generator::expand(quad_list *q_list)
 
         case q_param: {
             /* Your code here */
-            sym_type tag = sym_tab->get_symbol_tag(q->sym1);
-            if (tag == SYM_CONST)
+            fetch(q->sym1, RAX);
+            STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
+                //store_float(q->sym1);
+
+                /*STREAM << "\t\t" << "sub" << "\t" << "rsp, " << STACK_WIDTH << endl;
+                STREAM << "\t\t" << "fstp qword ptr" << "\t" << "rsp" << endl;
+                STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
+                STREAM << "\t\t" << "add" << "\t" << "rsp, " << STACK_WIDTH << endl;*/
+
+
+            
+            /*if (tag == SYM_CONST)
             {
                 constant_symbol *con_s = sym_tab->get_symbol(q->sym1)->get_constant_symbol();
                 sym_index type = con_s->type;
@@ -709,7 +719,7 @@ void code_generator::expand(quad_list *q_list)
                 }
                 STREAM << "]" << endl;
                 STREAM << "\t\t" << "push" << "\t" << "rax" << endl;
-            }
+            }//*/
             
             break;
         }
@@ -721,17 +731,18 @@ void code_generator::expand(quad_list *q_list)
             {
                 function_symbol *fun_s = sym_tab->get_symbol(q->sym1)->get_function_symbol();
                 STREAM << "\t\t" << "call" << "\t" << "L" << fun_s->label_nr << endl;
+                STREAM << "\t\t" << "add" << "\t" << "rsp, " << q->int2*STACK_WIDTH << endl;
                 store(RAX, q->sym3);
             }
             else if (tag == SYM_PROC)
             {
                 procedure_symbol *para_s = sym_tab->get_symbol(q->sym1)->get_procedure_symbol();
                 STREAM << "\t\t" << "call" << "\t" << "L" << para_s->label_nr << endl;
-            }
-            if (q->int2 > 0)
-            {
                 STREAM << "\t\t" << "add" << "\t" << "rsp, " << q->int2*STACK_WIDTH << endl; //TODO: If parameter bigger than 8?
             }
+            //if (q->int2 > 0)
+            //{
+            //}
 
             break;
         }

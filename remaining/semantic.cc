@@ -528,24 +528,25 @@ sym_index ast_functioncall::type_check()
 sym_index ast_uminus::type_check()
 {
     /* Your code here */
-    if(type == void_type)
+    sym_index t = expr->type_check();
+    if(t == void_type)
     {
         type_error(pos) << "Type is null" << endl;
     }
 
-    return type;
+    return t;
     //return void_type
 }
 
 sym_index ast_not::type_check()
 {
     /* Your code here */
-
-    if(type == void_type)
+    sym_index t = expr->type_check();
+    if(t == void_type)
     {
         type_error(pos) << "Type is null" << endl;
     }
-    return type;
+    return t;
     //return void_type;
 }
 
