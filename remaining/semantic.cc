@@ -554,7 +554,6 @@ sym_index ast_not::type_check()
 sym_index ast_elsif::type_check()
 {
     /* Your code here */
-
     if(condition->type_check() != integer_type)
         type_error(condition->pos) << "Conditional must be an integer" << endl;
 

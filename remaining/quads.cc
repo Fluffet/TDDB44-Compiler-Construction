@@ -313,17 +313,15 @@ sym_index do_binaryrelation(quad_list & q, quad_op_type iop, quad_op_type rop, a
   
   sym_index sym_left = node->left->generate_quads(q);
   sym_index sym_right = node->right->generate_quads(q);
-  sym_index temp_var;
+  sym_index temp_var = sym_tab->gen_temp_var(integer_type);
 
   if (sym_tab->get_symbol_type(sym_left) == integer_type)
   {
-    temp_var = sym_tab->gen_temp_var(integer_type);
     q += new quadruple(iop, sym_left, sym_right, temp_var);
   }
   else
   {
     // Real type
-    temp_var = sym_tab->gen_temp_var(real_type);
     q += new quadruple(rop, sym_left, sym_right, temp_var);
   }
   return temp_var;

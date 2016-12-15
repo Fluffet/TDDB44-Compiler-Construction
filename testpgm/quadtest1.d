@@ -11,7 +11,7 @@ var
 function foo(i : integer; x : real) : integer;
 begin
 	{ test if-then-else }
-	if 0 < x then
+	if i < x then
 		i := i + 1;
 		x := x - 1;
 	elsif not(i <> x) then
@@ -30,7 +30,6 @@ end;
 
 begin
 	{ test array index }
-	//i := a[1];
 	a[1] := 2;
 	a[a[1]-1] := a[1];
 	{ test coercion }
