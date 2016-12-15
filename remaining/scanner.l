@@ -288,7 +288,7 @@ NEWLINE_ERROR_STRING '([^'\n]|'')*\n
                             yylloc.first_line = yylineno;
                             yylloc.first_column = column;
                             column += yyleng;
-                            yylval.ival = stoi(yytext);
+                            yylval.ival = stol(yytext);
                             return T_INTNUM;
                          }
 

@@ -147,7 +147,7 @@ void ast_optimizer::ghett0_optimize_binop(ast_binaryoperation *node)
 ast_expression *ast_optimizer::fold_constants(ast_expression *node)
 {
     /* Your code here */
-    if (node->tag == AST_ID)
+    /*if (node->tag == AST_ID)
     {
         ast_id *id = node->get_ast_id();
         if (sym_tab->get_symbol_tag(id->sym_p) == SYM_CONST)
@@ -162,7 +162,7 @@ ast_expression *ast_optimizer::fold_constants(ast_expression *node)
                 return new ast_real(id->pos, sym->const_value.rval);
             }
         }
-    }
+    }*/
 
     if ( is_binop(node) )
     {
@@ -364,7 +364,10 @@ void ast_greaterthan::optimize()
 void ast_procedurecall::optimize()
 {
     /* Your code here */
-    parameter_list->optimize();
+     if (parameter_list != NULL) //TODO: WHY!?!?!?!!
+    {
+        parameter_list->optimize();
+    }
 }
 
 
@@ -417,7 +420,10 @@ void ast_return::optimize()
 void ast_functioncall::optimize()
 {
     /* Your code here */
-    parameter_list->optimize();
+    if (parameter_list != NULL) //TODO: WHY!?!?!?!!
+    {
+        parameter_list->optimize();
+    }
 }
 
 void ast_uminus::optimize()

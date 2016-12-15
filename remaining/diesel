@@ -174,7 +174,7 @@ fi
 
 as $as_args "$tmpfile_s" -o "$tmpfile_o"
 if [ $? -eq 0 ]; then
-    gcc -o $output "$tmpfile_o" diesel_rts.o
+    gcc -o $output "$tmpfile_o" diesel_rts.c
     rm "$tmpfile_s" "$tmpfile_o"
 else
     echo -e "${bold_red}The d.out file is causing the errors!${normal}"

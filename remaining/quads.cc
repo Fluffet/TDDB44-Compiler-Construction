@@ -542,7 +542,11 @@ sym_index ast_if::generate_quads(quad_list &q)
     USE_Q;
     /* Your code here */
     int elsif_lbl = sym_tab->get_next_label();
-    int bottom_lbl = sym_tab->get_next_label();
+    int bottom_lbl;
+    if (elsif_list != NULL || else_body != NULL)
+    {
+      bottom_lbl = sym_tab->get_next_label();
+    }
 
     sym_index pos = condition->generate_quads(q);
     q += new quadruple(q_jmpf, elsif_lbl, pos, NULL_SYM);
@@ -551,7 +555,10 @@ sym_index ast_if::generate_quads(quad_list &q)
     {
       pos = body->generate_quads(q);
     }
-    q += new quadruple(q_jmp, bottom_lbl, pos, NULL_SYM);
+    if (elsif_list != NULL || else_body != NULL)
+    {
+      q += new quadruple(q_jmp, bottom_lbl, pos, NULL_SYM);
+    }
 
     q += new quadruple(q_labl, elsif_lbl, NULL_SYM, NULL_SYM);
     if (elsif_list != NULL)
@@ -564,7 +571,10 @@ sym_index ast_if::generate_quads(quad_list &q)
       else_body->generate_quads(q);
     }
 
-    q += new quadruple(q_labl, bottom_lbl, NULL_SYM, NULL_SYM);
+    if (elsif_list != NULL || else_body != NULL)
+    {
+      q += new quadruple(q_labl, bottom_lbl, NULL_SYM, NULL_SYM);
+    }
 
     return NULL_SYM;
 }
@@ -583,6 +593,10 @@ sym_index ast_return::generate_quads(quad_list &q)
         q += new quadruple(q_ireturn, q.last_label, val, NULL_SYM);
       else if(val_type == real_type)
         q += new quadruple(q_rreturn, q.last_label, val, NULL_SYM);
+    }
+    else
+    {
+      q += new quadruple(q_jmp, q.last_label, NULL_SYM, NULL_SYM);
     }
     return NULL_SYM;
 }

@@ -359,7 +359,7 @@ sym_index semantic::check_binrel(ast_binaryrelation *node)
     /* Your code here */
     sym_index left_type = node->left->type_check();
     sym_index right_type = node->right->type_check();
-    
+   
     if (left_type != right_type)
     {
         if (left_type != real_type)
@@ -528,24 +528,25 @@ sym_index ast_functioncall::type_check()
 sym_index ast_uminus::type_check()
 {
     /* Your code here */
-    if(type == void_type)
+    sym_index t = expr->type_check();
+    if(t == void_type)
     {
         type_error(pos) << "Type is null" << endl;
     }
 
-    return type;
+    return t;
     //return void_type
 }
 
 sym_index ast_not::type_check()
 {
     /* Your code here */
-    if(expr->type_check() == void_type)
+    sym_index t = expr->type_check();
+    if(t == void_type)
     {
         type_error(pos) << "Type is null" << endl;
     }
-
-    return integer_type;
+    return t;
     //return void_type;
 }
 
