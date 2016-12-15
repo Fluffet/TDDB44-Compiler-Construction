@@ -198,7 +198,7 @@ void code_generator::fetch(sym_index sym_p, register_type dest)
         {
             value = cs->const_value.ival;
         }
-        STREAM << "\t\t" << "mov " << reg[dest] << ", " << value << endl;
+        STREAM << "\t\t" << "mov" << "\t" << reg[dest] << ", " << value << endl;
     }
     else if (tag == SYM_VAR)
     {
